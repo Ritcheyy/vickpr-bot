@@ -33,6 +33,10 @@ export class CreatePullRequestDto {
   @IsNotEmpty()
   readonly task: string;
 
+  @IsString()
+  @IsNotEmpty()
+  readonly merger: string;
+
   @IsArray()
   @IsNotEmpty()
   reviewers: object[];
@@ -68,6 +72,10 @@ export class UpdatePullRequestDto {
   @IsNotEmpty()
   @IsEnum(PullRequestStatusType)
   readonly status: string;
+
+  @IsString()
+  @IsNotEmpty()
+  readonly merger: string;
 
   @IsArray()
   @IsNotEmpty()

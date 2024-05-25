@@ -16,6 +16,11 @@ export class PullRequestsController {
     return this.pullRequestsService.findAll();
   }
 
+  @Get('pending')
+  getAllPending() {
+    return this.pullRequestsService.getAllPending();
+  }
+
   @Put(':id')
   update(@Param('id') id: string, @Body() body: UpdatePullRequestDto) {
     return this.pullRequestsService.update(id, body);

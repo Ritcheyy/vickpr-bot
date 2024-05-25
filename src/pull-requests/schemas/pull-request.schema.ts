@@ -6,9 +6,6 @@ export type PullRequestDocument = HydratedDocument<PullRequest>;
 @Schema()
 export class PullRequest {
   @Prop({ required: true })
-  project: string;
-
-  @Prop({ required: true })
   title: string;
 
   @Prop({ required: true })
@@ -17,14 +14,20 @@ export class PullRequest {
   @Prop({ required: true })
   type: string;
 
+  @Prop({ required: true, default: 'pending' })
+  status: string;
+
+  @Prop({ required: true })
+  project: string;
+
   @Prop({ required: true })
   priority: string;
 
   @Prop({ required: true })
   task: string;
 
-  @Prop({ required: true, default: 'pending' })
-  status: string;
+  @Prop({ required: true })
+  merger: string;
 
   @Prop({ type: [Object], required: true })
   reviewers: object[];
