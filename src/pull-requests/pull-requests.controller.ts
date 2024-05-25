@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Put, Param } from '@nestjs/common';
 import { PullRequestsService } from './pull-requests.service';
-import { CreatePullRequestDto } from './pull-request.dto';
+import { CreatePullRequestDto, UpdatePullRequestDto } from './pull-request.dto';
 
 @Controller('pull-requests')
 export class PullRequestsController {
@@ -17,7 +17,7 @@ export class PullRequestsController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() body: CreatePullRequestDto) {
+  update(@Param('id') id: string, @Body() body: UpdatePullRequestDto) {
     return this.pullRequestsService.update(id, body);
   }
 }

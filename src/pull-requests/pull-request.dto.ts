@@ -1,6 +1,6 @@
 import { IsArray, IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { PullRequestStatusType } from '../common/constants';
 
-// type PullRequestStatusType = 'pending' | 'approved' | 'commented' | 'rejected';
 enum PullRequestPriorityType {
   HIGH = 'high',
   MEDIUM = 'medium',
@@ -63,6 +63,11 @@ export class UpdatePullRequestDto {
   @IsString()
   @IsNotEmpty()
   readonly task: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @IsEnum(PullRequestStatusType)
+  readonly status: string;
 
   @IsArray()
   @IsNotEmpty()
