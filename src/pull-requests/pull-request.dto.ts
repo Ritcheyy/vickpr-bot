@@ -35,5 +35,5 @@ export class CreatePullRequestDto {
 
   @IsArray()
   @IsNotEmpty()
-  readonly reviewers: string[];
+  reviewers: object[];
 }

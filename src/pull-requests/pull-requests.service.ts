@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { CreatePullRequestDto } from './pull-request.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { PullRequest } from './schemas/pull-request.schema';
+import { PullRequestStatusType } from '../common/constants';
 
 @Injectable()
 export class PullRequestsService {
@@ -12,12 +13,17 @@ export class PullRequestsService {
   ) {}
 
   async create(pullRequestBody: CreatePullRequestDto) {
+    pullRequestBody.reviewers = pullRequestBody.reviewers.map((reviewer) => ({
+      user: reviewer,
+      status: PullRequestStatusType.PENDING,
+    }));
+
     const createdPullRequest = new this.pullRequestModel(pullRequestBody);
     return await createdPullRequest.save();
   }
 
   async findAll() {
-    return this.pullRequestModel.find();
+    return this.pullRequestModel.find().sort({ createdAt: -1 });
   }
 
   findOne(id: number) {

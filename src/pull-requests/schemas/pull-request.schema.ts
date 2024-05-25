@@ -26,8 +26,8 @@ export class PullRequest {
   @Prop({ required: true, default: 'pending' })
   status: string;
 
-  @Prop({ type: [String], required: true })
-  reviewers: string[];
+  @Prop({ type: [Object], required: true })
+  reviewers: object[];
 }
 
 export const PullRequestSchema = SchemaFactory.createForClass(PullRequest);
