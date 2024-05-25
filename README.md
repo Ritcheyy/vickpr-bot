@@ -1,38 +1,30 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+## VickPR Agent
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-  
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+VickPR Agent is a Semi-Automated Slack app designed to streamline pull request (PR) management within our development team. Its primary objectives include:
 
-## Description
+### Tools/Technologies
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+VickPR Agent is built using the following tools and technologies:
 
-## Installation
+- NodeJS and NestJS
+- MongoDB
+- Slack API
+- Slack Block kit
+
+
+### Getting started
+
+```bash
+$ git clone repo-link vickpr-agent
+```
+
+### Installation
 
 ```bash
 $ npm install
 ```
 
-## Running the app
+### Running the app
 
 ```bash
 # development
@@ -45,7 +37,7 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
-## Test
+### Test
 
 ```bash
 # unit tests
@@ -58,16 +50,46 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
-## Support
+### Slack Installation
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+1. **Installation**: Install the VickPR Agent Slack app from the Slack App Directory.
 
-## Stay in touch
+2. **Configuration**: Configure the app settings, including Slack OAuth tokens.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+3. **Usage**: Use Slack slash commands to submit PR details and schedule reminders.
 
-## License
+### Roadmap
 
-  Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- [x] Implement Slack slash commands for PR submission.
+- [x] Set up automated reminders for reviewers.
+- [ ] Enhance Slack interaction with interactive messages for PR details submission.
+- [ ] Add support for customizing reminder intervals.
+- [ ] Integrate with GitHub API to fetch PR details automatically.
+- [ ] Implement Jira integration for linking PRs to associated tasks.
+- [ ] Enhance UI/UX with interactive components and improved error handling.
+- [ ] Introduce support for multiple repositories and project boards.
+- [ ] Implement support for other version control systems (e.g., Bitbucket, GitLab).
+- [ ] Introduce advanced analytics and reporting features for PR performance tracking.
+
+### Contribution Guidelines
+
+VickPR Agent welcomes contributions from the community. Here's how you can contribute:
+
+1. **Fork the Repository**: Fork the VickPR Agent repository on GitHub.
+
+2. **Implement Features or Fixes**: Work on new features or bug fixes in your fork.
+
+3. **Submit Pull Requests**: Submit pull requests from your fork to the main repository for review.
+
+4. **Follow Coding Standards**: Adhere to coding standards and guidelines used in the project.
+
+5. **Testing**: Ensure your changes are properly tested and include relevant documentation updates.
+
+### Support and Feedback
+
+For support or feedback, reach out to the project maintainers or open an issue on GitHub.
+
+
+### Authors
+
+- [Ritcheyy](https://github.com/ritcheyy)
