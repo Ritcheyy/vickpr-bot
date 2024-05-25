@@ -1,6 +1,6 @@
-import { Model } from 'mongoose';
-import { Injectable } from '@nestjs/common';
-import { CreatePullRequestDto } from './pull-request.dto';
+import { isValidObjectId, Model } from 'mongoose';
+import { Injectable, UnprocessableEntityException } from '@nestjs/common';
+import { CreatePullRequestDto, UpdatePullRequestDto } from './pull-request.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { PullRequest } from './schemas/pull-request.schema';
 import { PullRequestStatusType } from '../common/constants';
@@ -26,15 +26,19 @@ export class PullRequestsService {
     return this.pullRequestModel.find().sort({ createdAt: -1 });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} pullRequest`;
-  }
+  async update(id: string, body: UpdatePullRequestDto) {
+    if (!isValidObjectId(id)) {
+      throw new UnprocessableEntityException('Invalid ID');
+    }
 
-  update(id: number) {
-    return `This action updates a #${id} pullRequest`;
-  }
+    const pullRequest = await this.pullRequestModel
+      .findByIdAndUpdate(id, { $set: body }, { new: true })
+      .lean();
 
-  remove(id: number) {
-    return `This action removes a #${id} pullRequest`;
+    if (!pullRequest) {
+      throw new UnprocessableEntityException('Pull Request not found');
+    }
+
+    return pullRequest;
   }
 }

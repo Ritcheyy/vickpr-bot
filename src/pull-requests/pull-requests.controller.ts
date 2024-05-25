@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param } from '@nestjs/common';
 import { PullRequestsService } from './pull-requests.service';
 import { CreatePullRequestDto } from './pull-request.dto';
 
@@ -24,18 +16,8 @@ export class PullRequestsController {
     return this.pullRequestsService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.pullRequestsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string) {
-    return this.pullRequestsService.update(+id);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.pullRequestsService.remove(+id);
+  @Put(':id')
+  update(@Param('id') id: string, @Body() body: CreatePullRequestDto) {
+    return this.pullRequestsService.update(id, body);
   }
 }
