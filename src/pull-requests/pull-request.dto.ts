@@ -1,4 +1,4 @@
-import { IsArray, IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { IsArray, IsEnum, IsNotEmpty, IsString, IsUrl } from 'class-validator';
 import { PullRequestStatusType } from '../common/constants';
 
 enum PullRequestPriorityType {
@@ -18,6 +18,7 @@ export class CreatePullRequestDto {
 
   @IsString()
   @IsNotEmpty()
+  @IsUrl()
   readonly link: string;
 
   @IsString()
@@ -31,6 +32,7 @@ export class CreatePullRequestDto {
 
   @IsString()
   @IsNotEmpty()
+  @IsUrl()
   readonly task: string;
 
   @IsString()
