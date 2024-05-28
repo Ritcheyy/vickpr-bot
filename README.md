@@ -1,6 +1,6 @@
 ## VickPR Agent
 
-VickPR Agent is a Semi-Automated Slack app designed to streamline pull request (PR) management within our development team. Its primary objectives include:
+VickPR Agent is a Semi-Automated Slack app designed to streamline pull request management within our development team. Its primary objectives include:
 
 ### Tools/Technologies
 

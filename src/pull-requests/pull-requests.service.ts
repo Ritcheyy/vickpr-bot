@@ -3,10 +3,7 @@ import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { CreatePullRequestDto, UpdatePullRequestDto } from './pull-request.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { PullRequest } from './schemas/pull-request.schema';
-import {
-  PendingPullRequestStatusType,
-  PullRequestStatusType,
-} from '../common/constants';
+import { PendingPullRequestStatusType, PullRequestStatusType } from '../common/constants';
 
 @Injectable()
 export class PullRequestsService {
@@ -32,9 +29,7 @@ export class PullRequestsService {
   async getAllPending() {
     const pendingStatuses = Object.values(PendingPullRequestStatusType);
 
-    return this.pullRequestModel
-      .find({ status: { $in: pendingStatuses } })
-      .sort({ createdAt: -1 });
+    return this.pullRequestModel.find({ status: { $in: pendingStatuses } }).sort({ createdAt: -1 });
   }
 
   async update(id: string, body: UpdatePullRequestDto) {
@@ -42,11 +37,7 @@ export class PullRequestsService {
       throw new UnprocessableEntityException('Invalid ID');
     }
 
-    const pullRequest = await this.pullRequestModel.findByIdAndUpdate(
-      id,
-      { $set: body },
-      { new: true },
-    );
+    const pullRequest = await this.pullRequestModel.findByIdAndUpdate(id, { $set: body }, { new: true });
 
     if (!pullRequest) {
       throw new UnprocessableEntityException('Pull Request not found');

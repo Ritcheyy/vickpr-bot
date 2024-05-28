@@ -5,11 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { PullRequest, PullRequestSchema } from './schemas/pull-request.schema';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([
-      { name: PullRequest.name, schema: PullRequestSchema },
-    ]),
-  ],
+  imports: [MongooseModule.forFeature([{ name: PullRequest.name, schema: PullRequestSchema }])],
   controllers: [PullRequestsController],
   providers: [PullRequestsService],
 })
