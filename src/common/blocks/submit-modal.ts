@@ -75,7 +75,7 @@ export const SUBMIT_PULL_REQUEST_BLOCK = {
       type: 'input',
       element: {
         type: 'url_text_input',
-        action_id: 'pr_link',
+        action_id: 'link',
       },
       label: {
         type: 'plain_text',
@@ -87,7 +87,7 @@ export const SUBMIT_PULL_REQUEST_BLOCK = {
       type: 'input',
       element: {
         type: 'url_text_input',
-        action_id: 'task_link',
+        action_id: 'task',
       },
       label: {
         type: 'plain_text',
@@ -279,6 +279,14 @@ export const SUBMIT_PULL_REQUEST_BLOCK = {
       label: {
         type: 'plain_text',
         text: 'Merge manager',
+        emoji: true,
+      },
+    },
+    {
+      type: 'header',
+      text: {
+        type: 'plain_text',
+        text: ' ',
         emoji: true,
       },
     },

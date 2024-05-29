@@ -18,3 +18,21 @@ export type SlackEventResponse = {
   event_time: number;
   authorizations: object[];
 };
+
+export enum EventTypes {
+  APP_MENTION = 'app_mention',
+  CMD_SUBMIT = '/submit-pr',
+  MODAL_SUBMIT = 'submit-pr-modal',
+}
+
+export type SubmitPullRequestType = {
+  project: string;
+  title: string;
+  link: string;
+  type: string;
+  priority: string;
+  task: string;
+  status?: string;
+  merger: string;
+  reviewers: string[];
+};

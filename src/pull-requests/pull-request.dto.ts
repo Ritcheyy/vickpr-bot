@@ -10,38 +10,36 @@ enum PullRequestPriorityType {
 export class CreatePullRequestDto {
   @IsString()
   @IsNotEmpty()
-  readonly project: string;
+  project: string;
 
   @IsString()
   @IsNotEmpty()
-  readonly title: string;
+  title: string;
+
+  @IsUrl({ require_protocol: true }, { message: 'PR link must be a valid URL' })
+  @IsNotEmpty()
+  link: string;
 
   @IsString()
   @IsNotEmpty()
-  @IsUrl()
-  readonly link: string;
-
-  @IsString()
-  @IsNotEmpty()
-  readonly type: string;
+  type: string;
 
   @IsString()
   @IsNotEmpty()
   @IsEnum(PullRequestPriorityType)
-  readonly priority: string;
+  priority: string;
+
+  @IsUrl({ require_protocol: true }, { message: 'Task link must be a valid URL' })
+  @IsNotEmpty()
+  task: string;
 
   @IsString()
   @IsNotEmpty()
-  @IsUrl()
-  readonly task: string;
-
-  @IsString()
-  @IsNotEmpty()
-  readonly merger: string;
+  merger: string;
 
   @IsArray()
   @IsNotEmpty()
-  reviewers: object[];
+  reviewers: string[] | object[];
 }
 
 export class UpdatePullRequestDto {
@@ -55,6 +53,7 @@ export class UpdatePullRequestDto {
 
   @IsString()
   @IsNotEmpty()
+  @IsUrl({ require_protocol: true }, { message: 'PR link must be a valid URL' })
   readonly link: string;
 
   @IsString()
@@ -68,6 +67,7 @@ export class UpdatePullRequestDto {
 
   @IsString()
   @IsNotEmpty()
+  @IsUrl({ require_protocol: true }, { message: 'Task link must be a valid URL' })
   readonly task: string;
 
   @IsString()

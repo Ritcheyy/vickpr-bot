@@ -1,7 +1,9 @@
 import { isValidObjectId, Model } from 'mongoose';
+import { validateOrReject, ValidationError } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 import { Injectable, UnprocessableEntityException } from '@nestjs/common';
-import { CreatePullRequestDto, UpdatePullRequestDto } from './pull-request.dto';
 import { InjectModel } from '@nestjs/mongoose';
+import { CreatePullRequestDto, UpdatePullRequestDto } from './pull-request.dto';
 import { PullRequest } from './schemas/pull-request.schema';
 import { PendingPullRequestStatusType, PullRequestStatusType } from '../common/constants';
 
@@ -12,14 +14,47 @@ export class PullRequestsService {
     private pullRequestModel: Model<PullRequest>,
   ) {}
 
-  async create(pullRequestBody: CreatePullRequestDto) {
-    pullRequestBody.reviewers = pullRequestBody.reviewers.map((reviewer) => ({
-      user: reviewer,
-      status: PullRequestStatusType.PENDING,
-    }));
+  async create(pullRequestBody: CreatePullRequestDto, blockIdMapping?: any, ack?: any) {
+    const newPullRequest = plainToInstance(CreatePullRequestDto, pullRequestBody);
 
-    const createdPullRequest = new this.pullRequestModel(pullRequestBody);
-    return await createdPullRequest.save();
+    try {
+      // validate here, since it's not routing through http
+      await validateOrReject(newPullRequest);
+
+      // Transform reviewers data, add review status - pending
+      pullRequestBody.reviewers = pullRequestBody.reviewers.map((reviewer) => ({
+        user: reviewer,
+        status: PullRequestStatusType.PENDING,
+      }));
+
+      const createdPullRequest = new this.pullRequestModel(pullRequestBody);
+      const savedPullRequest = await createdPullRequest.save();
+
+      // Submit PR to PR Channel
+
+      await ack();
+
+      return savedPullRequest;
+    } catch (errors) {
+      if (errors instanceof Array && errors[0] instanceof ValidationError) {
+        const formattedError = errors.reduce(
+          (acc, error) => ({ ...acc, [blockIdMapping[error.property]]: Object.values(error.constraints)[0] }),
+          {},
+        );
+        console.log(formattedError);
+        return ack({
+          response_action: 'errors',
+          errors: formattedError,
+        });
+      } else {
+        console.log(errors);
+        return ack({
+          response_action: 'errors',
+          errors,
+        });
+        // throw new UnprocessableEntityException(error);
+      }
+    }
   }
 
   async findAll() {

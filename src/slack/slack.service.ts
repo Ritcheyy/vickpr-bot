@@ -1,14 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { App, ExpressReceiver } from '@slack/bolt';
-import { EventTypes } from './slack.helper';
+import { EventTypes, SubmitPullRequestType } from '../common/types';
 import { SUBMIT_PULL_REQUEST_BLOCK } from '../common/blocks/submit-modal';
+import { PullRequestsService } from '../pull-requests/pull-requests.service';
+import { _extractBlockFormValues } from '../common/helpers';
 
 @Injectable()
 export class SlackService {
   private boltApp: App;
   private readonly receiver: ExpressReceiver;
 
-  constructor() {
+  constructor(private readonly pullRequestsService: PullRequestsService) {
     this.receiver = new ExpressReceiver({
       signingSecret: process.env.SLACK_SIGNING_SECRET,
       endpoints: '/',
@@ -66,28 +68,9 @@ export class SlackService {
   }
 
   async handleSubmitPullRequest({ ack, view }) {
-    await ack();
+    // Extract the values from the submitted form
+    const { structuredValues, blockIdMapping } = _extractBlockFormValues(view.state.values);
 
-    const submittedValues = view.state.values;
-
-    Object.values(submittedValues).forEach((inputField) => {
-      const field = Object.keys(inputField)[0];
-      const fieldValue = Object.values(inputField)[0];
-      const value =
-        fieldValue.value ??
-        fieldValue.selected_users ??
-        fieldValue.selected_user ??
-        fieldValue.selected_option?.text?.text ??
-        null;
-      // Log the value based on the action ID
-      console.log(field, value);
-    });
-
-    try {
-      console.log(submittedValues);
-    } catch (error) {
-      console.log(error);
-      // logger.error(error);
-    }
+    await this.pullRequestsService.create(structuredValues as SubmitPullRequestType, blockIdMapping, ack);
   }
 }
