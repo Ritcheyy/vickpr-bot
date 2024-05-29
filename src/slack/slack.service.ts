@@ -1,9 +1,13 @@
+// noinspection TypeScriptValidateJSTypes
+
 import { Injectable } from '@nestjs/common';
 import { App, ExpressReceiver } from '@slack/bolt';
 import { EventTypes, SubmitPullRequestType } from '../common/types';
-import { submitPullRequestBlock, submitSuccessBlock } from '../common/blocks/submit';
+import { submitPullRequestBlock, submitSuccessBlock, newPrSubmissionBlock } from '../common/blocks/submit';
 import { PullRequestsService } from '../pull-requests/pull-requests.service';
 import { _extractBlockFormValues } from '../common/helpers';
+
+const CHANNEL_ID = 'C075HAJLHPT';
 
 @Injectable()
 export class SlackService {
@@ -30,7 +34,7 @@ export class SlackService {
     this.boltApp.event(EventTypes.APP_MENTION, this.handleAppMention.bind(this));
 
     // Command Events
-    this.boltApp.command(EventTypes.CMD_SUBMIT, this.handleSubmitModalTrigger.bind(this));
+    this.boltApp.command(EventTypes.CMD_SUBMIT, this.testAction.bind(this));
 
     // View Events
     this.boltApp.view(EventTypes.MODAL_SUBMIT, this.handleSubmitPullRequest.bind(this));
@@ -58,7 +62,6 @@ export class SlackService {
     await ack();
 
     try {
-      // noinspection TypeScriptValidateJSTypes
       await client.views.open({
         trigger_id: body.trigger_id,
         view: submitPullRequestBlock(body.user_id),
@@ -68,15 +71,46 @@ export class SlackService {
     }
   }
 
-  async handleSubmitPullRequest({ ack, view, client }) {
+  async handleSubmitPullRequest({ ack, view, client, body }) {
     // Extract the values from the submitted form
     const { structuredValues, blockIdMapping } = _extractBlockFormValues(view.state.values);
 
-    await this.pullRequestsService.create(structuredValues as SubmitPullRequestType, blockIdMapping, ack);
+    const newPullRequest = await this.pullRequestsService.create(
+      structuredValues as SubmitPullRequestType,
+      blockIdMapping,
+      ack,
+    );
+
+    await Promise.all([
+      // Submit PR to PR Channel
+      client.chat.postMessage({
+        channel: CHANNEL_ID,
+        // text: `:tada:  <@${body.user.id}> submitted a PR`,
+        attachments: [newPrSubmissionBlock()],
+      }),
+
+      // Send success message
+      client.chat.postMessage({
+        channel: body.user.id,
+        text: 'Your pull request has been successfully submitted!  :tada:',
+        blocks: submitSuccessBlock(structuredValues.link),
+      }),
+    ]);
+  }
+
+  async testAction({ ack, client }) {
+    await ack();
+
+    // client.chat.postMessage({
+    //   channel: body.user_id,
+    //   text: 'Your pull request has been successfully submitted!  :tada:',
+    //   blocks: submitSuccessBlock('Feat: Payment Integration'),
+    // });
+
     await client.chat.postMessage({
-      channel: 'U03DRM6SHA7',
-      text: ':tada:  Your pull request has been successfully submitted!',
-      blocks: submitSuccessBlock(),
+      channel: CHANNEL_ID,
+      // text: `:tada:  <@${body.user_id}> submitted a PR`,
+      attachments: [newPrSubmissionBlock()],
     });
   }
 }

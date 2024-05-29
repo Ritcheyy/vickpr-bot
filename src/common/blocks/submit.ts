@@ -301,20 +301,37 @@ export const submitPullRequestBlock = (userId: string = '') => {
   };
 };
 
-export const submitSuccessBlock = () => {
+export const submitSuccessBlock = (pullRequestTitle: string) => {
   return [
     {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: ':tada:  Your pull request has been successfully submitted!',
+        text: 'Your pull request has been successfully submitted!  :tada:',
       },
+    },
+    {
+      type: 'rich_text',
+      elements: [
+        {
+          type: 'rich_text_quote',
+          elements: [
+            {
+              type: 'text',
+              text: pullRequestTitle,
+              style: {
+                bold: true,
+              },
+            },
+          ],
+        },
+      ],
     },
     {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: "Sit tight while I take care of the follow-up for you. \nYou'll receive updates as your pull request progresses. \nThank you for your contribution!  :hugging_face:",
+        text: "You'll receive updates on your pull request's progress as I follow up for you. \nHappy hacking! :star-struck:",
       },
     },
     {
@@ -336,4 +353,90 @@ export const submitSuccessBlock = () => {
       ],
     },
   ];
+};
+
+export const newPrSubmissionBlock = () => {
+  return {
+    color: '#33a12f',
+    fallback: 'New pull request submitted',
+    blocks: [
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: '@Ritcheyy submitted a new pull request:\n*<https://google.com|Fred Enriquez - New device request>*',
+        },
+        accessory: {
+          type: 'overflow',
+          options: [
+            {
+              text: {
+                type: 'plain_text',
+                emoji: true,
+                text: ':heavy_check_mark:  Approved',
+              },
+              value: 'approved',
+            },
+            {
+              text: {
+                type: 'plain_text',
+                emoji: true,
+                text: ':speech_balloon:  Commented',
+              },
+              value: 'value-1',
+            },
+            {
+              text: {
+                type: 'plain_text',
+                emoji: true,
+                text: ':white_check_mark:  Merged',
+              },
+              value: 'value-2',
+            },
+            {
+              text: {
+                type: 'plain_text',
+                emoji: true,
+                text: ':x:  Declined',
+              },
+              value: 'value-3',
+            },
+          ],
+          action_id: 'overflow-action',
+        },
+      },
+      {
+        type: 'section',
+        fields: [
+          {
+            type: 'mrkdwn',
+            text: '*Project* \nGlover App',
+          },
+          {
+            type: 'mrkdwn',
+            text: '*Type*\nFeature',
+          },
+          {
+            type: 'mrkdwn',
+            text: '*Priority*\nHigh',
+          },
+          {
+            type: 'mrkdwn',
+            text: '*Status*\n`Pending`',
+          },
+          {
+            type: 'mrkdwn',
+            text: '*Task*\n<https://google.com|GA-1001>',
+          },
+          {
+            type: 'mrkdwn',
+            text: '*Reviewers*\n`@Ritcheyy`, `@Bliss`, `@Ritcheyy`',
+          },
+        ],
+      },
+      {
+        type: 'divider',
+      },
+    ],
+  };
 };
