@@ -23,6 +23,7 @@ export enum EventTypes {
   APP_MENTION = 'app_mention',
   CMD_SUBMIT = '/submit-pr',
   MODAL_SUBMIT = 'submit-pr-modal',
+  VIEW_PULL_REQUEST_BTN = 'view_pull_request_btn',
 }
 
 export type SubmitPullRequestType = {

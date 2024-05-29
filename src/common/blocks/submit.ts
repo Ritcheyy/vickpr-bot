@@ -300,3 +300,40 @@ export const submitPullRequestBlock = (userId: string = '') => {
     ],
   };
 };
+
+export const submitSuccessBlock = () => {
+  return [
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: ':tada:  Your pull request has been successfully submitted!',
+      },
+    },
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: "Sit tight while I take care of the follow-up for you. \nYou'll receive updates as your pull request progresses. \nThank you for your contribution!  :hugging_face:",
+      },
+    },
+    {
+      type: 'divider',
+    },
+    {
+      type: 'actions',
+      elements: [
+        {
+          type: 'button',
+          text: {
+            type: 'plain_text',
+            text: 'View Pull Request',
+            emoji: true,
+          },
+          url: 'https://google.com',
+          action_id: 'view_pull_request_btn',
+        },
+      ],
+    },
+  ];
+};

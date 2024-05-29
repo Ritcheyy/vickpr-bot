@@ -50,9 +50,10 @@ export class PullRequestsService {
         console.log(errors);
         return ack({
           response_action: 'errors',
-          errors,
+          errors: {
+            title: 'There was an error with your submission. Please try again later.',
+          },
         });
-        // throw new UnprocessableEntityException(error);
       }
     }
   }

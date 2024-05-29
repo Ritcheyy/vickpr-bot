@@ -5,6 +5,8 @@ export type PullRequestDocument = HydratedDocument<PullRequest>;
 
 @Schema()
 export class PullRequest {
+  // Todo: Add Author and Message details
+
   @Prop({ required: true })
   title: string;
 
