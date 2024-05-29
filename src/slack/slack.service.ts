@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { App, ExpressReceiver } from '@slack/bolt';
 import { EventTypes, SubmitPullRequestType } from '../common/types';
-import { SUBMIT_PULL_REQUEST_BLOCK } from '../common/blocks/submit-modal';
+import { submitPullRequestBlock } from '../common/blocks/submit-modal';
 import { PullRequestsService } from '../pull-requests/pull-requests.service';
 import { _extractBlockFormValues } from '../common/helpers';
 
@@ -56,10 +56,11 @@ export class SlackService {
     await ack();
 
     try {
+      console.log(body);
       // noinspection TypeScriptValidateJSTypes
       await client.views.open({
         trigger_id: body.trigger_id,
-        view: SUBMIT_PULL_REQUEST_BLOCK,
+        view: submitPullRequestBlock(body.user_id),
       });
     } catch (error) {
       console.log(error);
