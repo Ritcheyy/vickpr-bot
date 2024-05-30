@@ -62,14 +62,8 @@ $ npm run test:cov
 
 - [x] Implement Slack slash commands for PR submission.
 - [x] Set up automated reminders for reviewers.
-- [ ] Enhance Slack interaction with interactive messages for PR details submission.
+- [x] Enhance Slack interaction with interactive messages for PR details submission.
 - [ ] Add support for customizing reminder intervals.
-- [ ] Integrate with GitHub API to fetch PR details automatically.
-- [ ] Implement Jira integration for linking PRs to associated tasks.
-- [ ] Enhance UI/UX with interactive components and improved error handling.
-- [ ] Introduce support for multiple repositories and project boards.
-- [ ] Implement support for other version control systems (e.g., Bitbucket, GitLab).
-- [ ] Introduce advanced analytics and reporting features for PR performance tracking.
 
 ### Contribution Guidelines
 
