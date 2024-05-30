@@ -1,8 +1,8 @@
 {
-  "name": "vickpr-agent",
+  "name": "vickpr-bot",
   "private": true,
   "version": "1.0.0",
-  "description": "VickPR Agent",
+  "description": "VickPR Bot",
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",

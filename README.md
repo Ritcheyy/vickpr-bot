@@ -1,10 +1,10 @@
-## VickPR Agent
+## VickPR Bot
 
-VickPR Agent is a Semi-Automated Slack app designed to streamline pull request management within our development team. Its primary objectives include:
+VickPR Bot is a Semi-Automated Slack app designed to streamline pull request management within our development team. Its primary objectives include:
 
 ### Tools/Technologies
 
-VickPR Agent is built using the following tools and technologies:
+VickPR Bot is built using the following tools and technologies:
 
 - NodeJS and NestJS
 - MongoDB
@@ -15,7 +15,7 @@ VickPR Agent is built using the following tools and technologies:
 ### Getting started
 
 ```bash
-$ git clone repo-link vickpr-agent
+$ git clone [repo-link] vickpr-bot
 ```
 
 ### Installation
@@ -52,7 +52,7 @@ $ npm run test:cov
 
 ### Slack Installation
 
-1. **Installation**: Install the VickPR Agent Slack app from the Slack App Directory.
+1. **Installation**: Install the VickPR Bot Slack app from the Slack App Directory.
 
 2. **Configuration**: Configure the app settings, including Slack OAuth tokens.
 
@@ -73,9 +73,9 @@ $ npm run test:cov
 
 ### Contribution Guidelines
 
-VickPR Agent welcomes contributions from the community. Here's how you can contribute:
+VickPR Bot welcomes contributions from the community. Here's how you can contribute:
 
-1. **Fork the Repository**: Fork the VickPR Agent repository on GitHub.
+1. **Fork the Repository**: Fork the VickPR Bot repository on GitHub.
 
 2. **Implement Features or Fixes**: Work on new features or bug fixes in your fork.
 
