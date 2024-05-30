@@ -1,3 +1,5 @@
+import { ReviewerType } from './types';
+
 export const _extractBlockFormValues = (submittedValues: any) => {
   const structuredValues: any = {};
   const blockIdMapping: any = {};
@@ -25,4 +27,28 @@ export const _extractBlockFormValues = (submittedValues: any) => {
     structuredValues,
     blockIdMapping,
   };
+};
+
+/*
+ * get reviewers and format as string...
+ * @return format - "`@Ritcheyy`, `@Bliss`, `@Ritcheyy`"
+ */
+export const getReviewers = (reviewers: ReviewerType[]) => {
+  if (reviewers.length === 0) {
+    return 'No reviewers';
+  }
+
+  return reviewers.map((reviewer) => `<@${reviewer.user}>`).join(', ');
+};
+
+/*
+ * get ticket id from jira link - ex: https://jira.example.com/browse/PROJ-123
+ * @return number - PROJ-123
+ */
+export const getTicketIdFromLink = (link: string) => {
+  return link.split('/browse/').pop();
+};
+
+export const _capitalizeString = (str: string = '') => {
+  return str.charAt(0).toUpperCase() + str.slice(1);
 };

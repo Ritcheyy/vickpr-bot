@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { ReviewerType } from '../../common/types';
 
 export type PullRequestDocument = HydratedDocument<PullRequest>;
 
@@ -26,13 +27,21 @@ export class PullRequest {
   priority: string;
 
   @Prop({ required: true })
-  task: string;
+  ticket: string;
 
   @Prop({ required: true })
   merger: string;
 
+  @Prop({ required: true })
+  author: string;
+
   @Prop({ type: [Object], required: true })
-  reviewers: object[];
+  reviewers: ReviewerType[];
+
+  @Prop({ type: Object })
+  message?: {
+    timestamp: string;
+  };
 }
 
 export const PullRequestSchema = SchemaFactory.createForClass(PullRequest);

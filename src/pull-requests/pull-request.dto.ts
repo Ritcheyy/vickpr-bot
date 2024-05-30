@@ -29,9 +29,9 @@ export class CreatePullRequestDto {
   @IsEnum(PullRequestPriorityType)
   priority: string;
 
-  @IsUrl({ require_protocol: true }, { message: 'Task link must be a valid URL' })
+  @IsUrl({ require_protocol: true }, { message: 'Ticket link must be a valid URL' })
   @IsNotEmpty()
-  task: string;
+  ticket: string;
 
   @IsString()
   @IsNotEmpty()
@@ -39,7 +39,7 @@ export class CreatePullRequestDto {
 
   @IsArray()
   @IsNotEmpty()
-  reviewers: string[] | object[];
+  reviewers: string[] | Record<string, any>[];
 }
 
 export class UpdatePullRequestDto {
@@ -67,8 +67,8 @@ export class UpdatePullRequestDto {
 
   @IsString()
   @IsNotEmpty()
-  @IsUrl({ require_protocol: true }, { message: 'Task link must be a valid URL' })
-  readonly task: string;
+  @IsUrl({ require_protocol: true }, { message: 'Ticket link must be a valid URL' })
+  readonly ticket: string;
 
   @IsString()
   @IsNotEmpty()

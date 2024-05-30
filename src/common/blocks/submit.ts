@@ -1,3 +1,7 @@
+import { _capitalizeString, getReviewers, getTicketIdFromLink } from '../helpers';
+import { FancyPrType } from '../constants';
+import { PullRequest } from '../../pull-requests/schemas/pull-request.schema';
+
 export const submitPullRequestBlock = (userId: string = '') => {
   return {
     type: 'modal',
@@ -95,11 +99,11 @@ export const submitPullRequestBlock = (userId: string = '') => {
         type: 'input',
         element: {
           type: 'url_text_input',
-          action_id: 'task',
+          action_id: 'ticket',
         },
         label: {
           type: 'plain_text',
-          text: 'Task Link (Jira)',
+          text: 'Ticket Link (Jira)',
           emoji: true,
         },
       },
@@ -301,7 +305,7 @@ export const submitPullRequestBlock = (userId: string = '') => {
   };
 };
 
-export const submitSuccessBlock = (pullRequestTitle: string) => {
+export const submitSuccessBlock = (pullRequestTitle: string, pullRequestType: string, messageLink: string) => {
   return [
     {
       type: 'section',
@@ -318,7 +322,7 @@ export const submitSuccessBlock = (pullRequestTitle: string) => {
           elements: [
             {
               type: 'text',
-              text: pullRequestTitle,
+              text: `${_capitalizeString(pullRequestType)} - ${_capitalizeString(pullRequestTitle)}`,
               style: {
                 bold: true,
               },
@@ -344,27 +348,27 @@ export const submitSuccessBlock = (pullRequestTitle: string) => {
           type: 'button',
           text: {
             type: 'plain_text',
-            text: 'View Pull Request',
+            text: 'View Submission',
             emoji: true,
           },
-          url: 'https://google.com',
-          action_id: 'view_pull_request_btn',
+          url: messageLink,
+          action_id: 'view_submission',
         },
       ],
     },
   ];
 };
 
-export const newPrSubmissionBlock = () => {
+export const newSubmissionNotificationBlock = (pullRequest: PullRequest) => {
   return {
     color: '#33a12f',
-    fallback: 'New pull request submitted',
+    fallback: `<@${pullRequest.author}> submitted a pull request  :rocket:`,
     blocks: [
       {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: '@Ritcheyy submitted a new pull request:\n*<https://google.com|Fred Enriquez - New device request>*',
+          text: `<@${pullRequest.author}> submitted a pull request  :rocket:\n*<${pullRequest.link}|${_capitalizeString(pullRequest.type)} - ${_capitalizeString(pullRequest.title)}>*`,
         },
         accessory: {
           type: 'overflow',
@@ -410,27 +414,27 @@ export const newPrSubmissionBlock = () => {
         fields: [
           {
             type: 'mrkdwn',
-            text: '*Project* \nGlover App',
+            text: `*Project*\n${pullRequest.project}`,
           },
           {
             type: 'mrkdwn',
-            text: '*Type*\nFeature',
+            text: `*Type*\n${FancyPrType[pullRequest.type]}`,
           },
           {
             type: 'mrkdwn',
-            text: '*Priority*\nHigh',
+            text: `*Priority*\n${_capitalizeString(pullRequest.priority)}`,
           },
           {
             type: 'mrkdwn',
-            text: '*Status*\n`Pending`',
+            text: `*Status*\n\`${_capitalizeString(pullRequest.status)}\``,
           },
           {
             type: 'mrkdwn',
-            text: '*Task*\n<https://google.com|GA-1001>',
+            text: `*Ticket*\n<${pullRequest.ticket}|${getTicketIdFromLink(pullRequest.ticket)}>`,
           },
           {
             type: 'mrkdwn',
-            text: '*Reviewers*\n`@Ritcheyy`, `@Bliss`, `@Ritcheyy`',
+            text: `*Reviewers*\n${getReviewers(pullRequest.reviewers)}`,
           },
         ],
       },

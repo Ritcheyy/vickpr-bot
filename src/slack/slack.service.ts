@@ -3,9 +3,10 @@
 import { Injectable } from '@nestjs/common';
 import { App, ExpressReceiver } from '@slack/bolt';
 import { EventTypes, SubmitPullRequestType } from '../common/types';
-import { submitPullRequestBlock, submitSuccessBlock, newPrSubmissionBlock } from '../common/blocks/submit';
+import { submitPullRequestBlock, submitSuccessBlock, newSubmissionNotificationBlock } from '../common/blocks/submit';
 import { PullRequestsService } from '../pull-requests/pull-requests.service';
 import { _extractBlockFormValues } from '../common/helpers';
+import { ValidationError } from 'class-validator';
 
 const CHANNEL_ID = 'C075HAJLHPT';
 
@@ -34,13 +35,13 @@ export class SlackService {
     this.boltApp.event(EventTypes.APP_MENTION, this.handleAppMention.bind(this));
 
     // Command Events
-    this.boltApp.command(EventTypes.CMD_SUBMIT, this.testAction.bind(this));
+    this.boltApp.command(EventTypes.CMD_SUBMIT, this.handleSubmitModalTrigger.bind(this));
 
     // View Events
     this.boltApp.view(EventTypes.MODAL_SUBMIT, this.handleSubmitPullRequest.bind(this));
 
     // Action Events
-    this.boltApp.action(EventTypes.VIEW_PULL_REQUEST_BTN, ({ ack }) => ack());
+    this.boltApp.action(EventTypes.VIEW_SUBMISSION, ({ ack }) => ack());
   }
 
   getApp() {
@@ -72,34 +73,75 @@ export class SlackService {
   }
 
   async handleSubmitPullRequest({ ack, view, client, body }) {
-    // Extract the values from the submitted form
-    const { structuredValues, blockIdMapping } = _extractBlockFormValues(view.state.values);
+    try {
+      // Extract the values from the submitted form
+      const { structuredValues, blockIdMapping } = _extractBlockFormValues(view.state.values);
+      structuredValues.author = body.user.id;
 
-    const newPullRequest = await this.pullRequestsService.create(
-      structuredValues as SubmitPullRequestType,
-      blockIdMapping,
-      ack,
-    );
+      const newPullRequest = await this.pullRequestsService.create(
+        structuredValues as SubmitPullRequestType,
+        blockIdMapping,
+        ack,
+      );
 
-    await Promise.all([
-      // Submit PR to PR Channel
-      client.chat.postMessage({
+      // Submit pull request to PR Channel
+      const messageResponse = await client.chat.postMessage({
         channel: CHANNEL_ID,
-        // text: `:tada:  <@${body.user.id}> submitted a PR`,
-        attachments: [newPrSubmissionBlock()],
-      }),
+        attachments: [newSubmissionNotificationBlock(newPullRequest)],
+      });
+
+      // Update the message timestamp
+      newPullRequest.message = {
+        timestamp: messageResponse.ts,
+      };
+      newPullRequest.save();
+
+      // Retrieve the message permalink
+      const { permalink } = await client.chat.getPermalink({
+        channel: CHANNEL_ID,
+        message_ts: messageResponse.ts,
+      });
 
       // Send success message
-      client.chat.postMessage({
-        channel: body.user.id,
+      // Todo: Get if user submits through bot user or channel
+      await client.chat.postMessage({
+        channel: newPullRequest.author,
         text: 'Your pull request has been successfully submitted!  :tada:',
-        blocks: submitSuccessBlock(structuredValues.link),
-      }),
-    ]);
+        blocks: submitSuccessBlock(structuredValues.title, structuredValues.type, permalink),
+      });
+    } catch (errors) {
+      console.log(errors);
+      if (!(errors instanceof Array && errors[0] instanceof ValidationError)) {
+        ack({
+          response_action: 'errors',
+          errors: {
+            title: 'There was an error with your submission. Please try again later.',
+          },
+        });
+      }
+    }
   }
 
   async testAction({ ack, client }) {
     await ack();
+
+    const TEST_DATA = {
+      title: 'fsgd',
+      link: 'https://www.google.com/',
+      type: 'feature',
+      status: 'pending',
+      project: 'api',
+      priority: 'medium',
+      ticket: 'https://www.google.com/',
+      merger: 'U03DB6TJZ55',
+      author: 'U03DRM6SHA7',
+      reviewers: [
+        {
+          user: 'U06CZSMLP2T',
+          status: 'pending',
+        },
+      ],
+    };
 
     // client.chat.postMessage({
     //   channel: body.user_id,
@@ -109,8 +151,7 @@ export class SlackService {
 
     await client.chat.postMessage({
       channel: CHANNEL_ID,
-      // text: `:tada:  <@${body.user_id}> submitted a PR`,
-      attachments: [newPrSubmissionBlock()],
+      attachments: [newSubmissionNotificationBlock(TEST_DATA)],
     });
   }
 }

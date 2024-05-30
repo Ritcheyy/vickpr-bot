@@ -41,20 +41,12 @@ export class PullRequestsService {
           (acc, error) => ({ ...acc, [blockIdMapping[error.property]]: Object.values(error.constraints)[0] }),
           {},
         );
-        console.log(formattedError);
-        return ack({
+        ack({
           response_action: 'errors',
           errors: formattedError,
         });
-      } else {
-        console.log(errors);
-        return ack({
-          response_action: 'errors',
-          errors: {
-            title: 'There was an error with your submission. Please try again later.',
-          },
-        });
       }
+      throw errors;
     }
   }
 
