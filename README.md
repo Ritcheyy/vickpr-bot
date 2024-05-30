@@ -18,6 +18,11 @@ VickPR Bot is built using the following tools and technologies:
 $ git clone [repo-link] vickpr-bot
 ```
 
+```bash
+# copy config file
+$ cp config/index.example.ts config/index.ts
+```
+
 ### Installation
 
 ```bash

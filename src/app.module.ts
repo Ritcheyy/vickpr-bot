@@ -1,3 +1,4 @@
+import Config from '../config';
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -12,7 +13,7 @@ import { SlackModule } from './slack/slack.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    MongooseModule.forRoot(process.env.DB_CONNECTION_STRING),
+    MongooseModule.forRoot(Config.DB_CONNECTION_STRING),
     SlackModule,
   ],
   controllers: [AppController],

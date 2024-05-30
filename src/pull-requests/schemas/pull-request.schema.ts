@@ -38,7 +38,7 @@ export class PullRequest {
   @Prop({ type: [Object], required: true })
   reviewers: ReviewerType[];
 
-  @Prop({ type: Object })
+  @Prop({ type: Object, default: null })
   message?: {
     timestamp: string;
   };

@@ -2,13 +2,12 @@
 
 import { Injectable } from '@nestjs/common';
 import { App, ExpressReceiver } from '@slack/bolt';
+import { ValidationError } from 'class-validator';
+import Config from '../../config';
 import { EventTypes, SubmitPullRequestType } from '../common/types';
 import { submitPullRequestBlock, submitSuccessBlock, newSubmissionNotificationBlock } from '../common/blocks/submit';
 import { PullRequestsService } from '../pull-requests/pull-requests.service';
 import { _extractBlockFormValues } from '../common/helpers';
-import { ValidationError } from 'class-validator';
-
-const CHANNEL_ID = 'C075HAJLHPT';
 
 @Injectable()
 export class SlackService {
@@ -17,12 +16,12 @@ export class SlackService {
 
   constructor(private readonly pullRequestsService: PullRequestsService) {
     this.receiver = new ExpressReceiver({
-      signingSecret: process.env.SLACK_SIGNING_SECRET,
+      signingSecret: Config.SLACK_SIGNING_SECRET,
       endpoints: '/',
     });
 
     this.boltApp = new App({
-      token: process.env.SLACK_BOT_TOKEN,
+      token: Config.SLACK_BOT_TOKEN,
       receiver: this.receiver,
     });
 
@@ -86,7 +85,7 @@ export class SlackService {
 
       // Submit pull request to PR Channel
       const messageResponse = await client.chat.postMessage({
-        channel: CHANNEL_ID,
+        channel: Config.AUTHORIZED_CHANNEL_ID,
         attachments: [newSubmissionNotificationBlock(newPullRequest)],
       });
 
@@ -98,7 +97,7 @@ export class SlackService {
 
       // Retrieve the message permalink
       const { permalink } = await client.chat.getPermalink({
-        channel: CHANNEL_ID,
+        channel: Config.AUTHORIZED_CHANNEL_ID,
         message_ts: messageResponse.ts,
       });
 
@@ -150,7 +149,7 @@ export class SlackService {
     // });
 
     await client.chat.postMessage({
-      channel: CHANNEL_ID,
+      channel: Config.AUTHORIZED_CHANNEL_ID,
       attachments: [newSubmissionNotificationBlock(TEST_DATA)],
     });
   }
