@@ -1,8 +1,20 @@
 import { _capitalizeString, getReviewers, getTicketIdFromLink } from '../helpers';
 import { FancyPrType } from '../constants';
 import { PullRequest } from '../../pull-requests/schemas/pull-request.schema';
+import Config from '../../../config';
 
 export const submitPullRequestBlock = (userId: string = '') => {
+  const projectOptions =
+    Config.APP_PROJECTS.map((project) => {
+      return {
+        text: {
+          type: 'plain_text',
+          text: project,
+        },
+        value: project,
+      };
+    }) || [];
+
   return {
     type: 'modal',
     callback_id: 'submit-pr-modal',
@@ -43,29 +55,7 @@ export const submitPullRequestBlock = (userId: string = '') => {
             text: 'Select project...',
           },
           action_id: 'project',
-          options: [
-            {
-              text: {
-                type: 'plain_text',
-                text: 'Web',
-              },
-              value: 'web',
-            },
-            {
-              text: {
-                type: 'plain_text',
-                text: 'API',
-              },
-              value: 'api',
-            },
-            {
-              text: {
-                type: 'plain_text',
-                text: 'Mobile',
-              },
-              value: 'mobile',
-            },
-          ],
+          options: projectOptions,
         },
       },
       {
