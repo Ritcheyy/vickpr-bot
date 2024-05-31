@@ -5,9 +5,9 @@ import { App, ExpressReceiver } from '@slack/bolt';
 import { ValidationError } from 'class-validator';
 import Config from '../../config';
 import { _extractBlockFormValues } from '../common/helpers';
-import { PullRequestStatusType, ReviewStatusResponseType } from '../common/constants';
 import { EventTypes, SubmitPullRequestType } from '../common/types';
 import { PullRequestsService } from '../pull-requests/pull-requests.service';
+import { PullRequestStatusType, ReviewStatusResponseType } from '../common/constants';
 import { submitPullRequestBlock, submitSuccessBlock, newSubmissionNotificationBlock } from '../common/blocks/submit';
 
 @Injectable()
@@ -32,6 +32,7 @@ export class SlackService {
     });*/
 
     // Raw Events
+    // Todo: Any random direct message should respond with the help block
     this.boltApp.event(EventTypes.APP_MENTION, this.handleAppMention.bind(this));
 
     // Command Events
@@ -51,9 +52,12 @@ export class SlackService {
 
   async handleAppMention({ event, say }) {
     try {
-      console.log(event);
-      await say(`Hey there <@${event.user}>!`);
-      // Add button for are you ready to submit a PR...
+      // Todo: improve generic response and add a block element
+      // Add button for "are you ready to submit a PR?"...
+      await say({
+        text: `Hey there <@${event.user}>!`,
+        thread_ts: event.ts ?? undefined,
+      });
     } catch (error) {
       console.log(error);
     }
