@@ -77,20 +77,38 @@ export class PullRequestsService {
 
   async updateReviewStatus(pullRequest: PullRequestDocument, userId: string, status: string) {
     try {
+      // check if user is a reviewer for the pull request
       const reviewer = pullRequest.reviewers.find((reviewer) => reviewer.user === userId);
+      const isMerger = pullRequest.merger === userId;
+      let updatedPullRequest: PullRequest = null;
 
-      if (!reviewer) {
+      if (!reviewer && !isMerger) {
         return {
           status: ReviewStatusResponseType.NOT_A_REVIEWER,
           data: null,
         };
       }
 
-      const updatedPullRequest = await this.pullRequestModel.findOneAndUpdate(
-        { _id: pullRequest._id },
-        { $set: { 'reviewers.$[reviewer].status': status } },
-        { arrayFilters: [{ 'reviewer.user': userId }], new: true, lean: true },
-      );
+      if (status === PullRequestStatusType.MERGED && !isMerger) {
+        return {
+          status: ReviewStatusResponseType.NOT_THE_MERGER,
+          data: null,
+        };
+      }
+
+      if (reviewer) {
+        updatedPullRequest = await this.pullRequestModel.findOneAndUpdate(
+          { _id: pullRequest._id },
+          { $set: { 'reviewers.$[reviewer].status': status } },
+          { arrayFilters: [{ 'reviewer.user': userId }], new: true, lean: true },
+        );
+      } else if (isMerger) {
+        updatedPullRequest = await this.pullRequestModel.findOneAndUpdate(
+          { _id: pullRequest._id },
+          { $set: { status: status } },
+          { new: true, lean: true },
+        );
+      }
 
       if (updatedPullRequest) {
         return {
@@ -98,7 +116,7 @@ export class PullRequestsService {
           data: updatedPullRequest,
         };
       } else {
-        throw new UnprocessableEntityException('Pull Request not found');
+        throw new UnprocessableEntityException('Pull request could not be updated');
       }
     } catch (error) {
       throw error;

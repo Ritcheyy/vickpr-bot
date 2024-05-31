@@ -160,6 +160,15 @@ export class SlackService {
       return;
     }
 
+    if (reviewStatusRes === ReviewStatusResponseType.NOT_THE_MERGER) {
+      await client.chat.postEphemeral({
+        channel: Config.AUTHORIZED_CHANNEL_ID,
+        user: user.id,
+        text: 'I am unable perform this action, you are not listed as the merge manager for this pull request.',
+      });
+      return;
+    }
+
     await client.chat.update({
       channel: Config.AUTHORIZED_CHANNEL_ID,
       ts: message.ts,

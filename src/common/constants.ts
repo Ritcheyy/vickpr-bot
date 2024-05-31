@@ -10,6 +10,7 @@ export enum PullRequestStatusType {
 
 export enum ReviewStatusResponseType {
   NOT_A_REVIEWER = 'NOT_A_REVIEWER',
+  NOT_THE_MERGER = 'NOT_THE_MERGER',
   SUCCESS = 'SUCCESS',
 }
 
