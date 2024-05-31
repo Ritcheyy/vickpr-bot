@@ -1,5 +1,5 @@
 import { IsArray, IsEnum, IsNotEmpty, IsString, IsUrl } from 'class-validator';
-import { PullRequestStatusType } from '../common/constants';
+import { PullRequestStatusType } from '@/common/constants';
 
 enum PullRequestPriorityType {
   HIGH = 'high',

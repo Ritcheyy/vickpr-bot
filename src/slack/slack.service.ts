@@ -1,14 +1,14 @@
 // noinspection TypeScriptValidateJSTypes
 
+import { ValidationError } from 'class-validator';
 import { Injectable } from '@nestjs/common';
 import { App, ExpressReceiver } from '@slack/bolt';
-import { ValidationError } from 'class-validator';
+import { newSubmissionNotificationBlock, submitPullRequestBlock, submitSuccessBlock } from '@/common/blocks/submit';
+import { PullRequestStatusType, ReviewStatusResponseType } from '@/common/constants';
+import { _extractBlockFormValues } from '@/common/helpers';
+import { EventTypes, SubmitPullRequestType } from '@/common/types';
+import { PullRequestsService } from '@/pull-requests/pull-requests.service';
 import Config from '../../config';
-import { _extractBlockFormValues } from '../common/helpers';
-import { EventTypes, SubmitPullRequestType } from '../common/types';
-import { PullRequestsService } from '../pull-requests/pull-requests.service';
-import { PullRequestStatusType, ReviewStatusResponseType } from '../common/constants';
-import { submitPullRequestBlock, submitSuccessBlock, newSubmissionNotificationBlock } from '../common/blocks/submit';
 
 @Injectable()
 export class SlackService {

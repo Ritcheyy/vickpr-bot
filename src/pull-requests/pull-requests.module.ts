@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { PullRequestsService } from './pull-requests.service';
-import { PullRequestsController } from './pull-requests.controller';
 import { MongooseModule } from '@nestjs/mongoose';
+import { PullRequestsController } from './pull-requests.controller';
+import { PullRequestsService } from './pull-requests.service';
 import { PullRequest, PullRequestSchema } from './schemas/pull-request.schema';
 
 @Module({

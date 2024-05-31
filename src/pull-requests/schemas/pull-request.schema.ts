@@ -1,6 +1,6 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-import { ReviewerType } from '../../common/types';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { ReviewerType } from '@/common/types';
 
 export type PullRequestDocument = HydratedDocument<PullRequest>;
 

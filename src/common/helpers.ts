@@ -1,6 +1,5 @@
 import { ReviewerType } from './types';
 import { mapEmojiToStatus } from './utils';
-import { PullRequestStatusType } from './constants';
 
 export const _extractBlockFormValues = (submittedValues: any) => {
   const structuredValues: any = {};

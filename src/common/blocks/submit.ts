@@ -1,7 +1,7 @@
 import Config from '../../../config';
-import { _capitalizeString, getReviewers, getReviewersWithStatusEmoji, getTicketIdFromLink } from '../helpers';
-import { FancyPrType } from '../constants';
 import { PullRequest } from '../../pull-requests/schemas/pull-request.schema';
+import { FancyPrType } from '../constants';
+import { _capitalizeString, getReviewers, getReviewersWithStatusEmoji, getTicketIdFromLink } from '../helpers';
 
 export const submitPullRequestBlock = (userId: string = '') => {
   const projectOptions =

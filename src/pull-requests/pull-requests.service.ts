@@ -1,11 +1,11 @@
-import { isValidObjectId, Model, Types } from 'mongoose';
-import { validateOrReject, ValidationError } from 'class-validator';
+import { Model, isValidObjectId } from 'mongoose';
 import { plainToInstance } from 'class-transformer';
-import { Injectable, UnprocessableEntityException } from '@nestjs/common';
+import { ValidationError, validateOrReject } from 'class-validator';
 import { InjectModel } from '@nestjs/mongoose';
+import { Injectable, UnprocessableEntityException } from '@nestjs/common';
+import { PendingPullRequestStatusType, PullRequestStatusType, ReviewStatusResponseType } from '@/common/constants';
 import { CreatePullRequestDto, UpdatePullRequestDto } from './pull-request.dto';
 import { PullRequest, PullRequestDocument } from './schemas/pull-request.schema';
-import { PendingPullRequestStatusType, PullRequestStatusType, ReviewStatusResponseType } from '../common/constants';
 
 @Injectable()
 export class PullRequestsService {

@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Body, Put, Param } from '@nestjs/common';
-import { PullRequestsService } from './pull-requests.service';
+import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
 import { CreatePullRequestDto, UpdatePullRequestDto } from './pull-request.dto';
+import { PullRequestsService } from './pull-requests.service';
 
 @Controller('pull-requests')
 export class PullRequestsController {
