@@ -1,11 +1,11 @@
-import { isValidObjectId, Model } from 'mongoose';
+import { isValidObjectId, Model, Types } from 'mongoose';
 import { validateOrReject, ValidationError } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { CreatePullRequestDto, UpdatePullRequestDto } from './pull-request.dto';
-import { PullRequest } from './schemas/pull-request.schema';
-import { PendingPullRequestStatusType, PullRequestStatusType } from '../common/constants';
+import { PullRequest, PullRequestDocument } from './schemas/pull-request.schema';
+import { PendingPullRequestStatusType, PullRequestStatusType, ReviewStatusResponseType } from '../common/constants';
 
 @Injectable()
 export class PullRequestsService {
@@ -30,10 +30,7 @@ export class PullRequestsService {
       const createdPullRequest = new this.pullRequestModel(pullRequestBody);
       const savedPullRequest = await createdPullRequest.save();
 
-      // Submit PR to PR Channel
-
       await ack();
-
       return savedPullRequest;
     } catch (errors) {
       if (errors instanceof Array && errors[0] instanceof ValidationError) {
@@ -54,6 +51,10 @@ export class PullRequestsService {
     return this.pullRequestModel.find().sort({ createdAt: -1 }).limit(20);
   }
 
+  async findByMessageTimestamp(messageTimestamp: string) {
+    return this.pullRequestModel.findOne({ message: { timestamp: messageTimestamp } });
+  }
+
   async getAllPending() {
     const pendingStatuses = Object.values(PendingPullRequestStatusType);
 
@@ -72,5 +73,35 @@ export class PullRequestsService {
     }
 
     return pullRequest;
+  }
+
+  async updateReviewStatus(pullRequest: PullRequestDocument, userId: string, status: string) {
+    try {
+      const reviewer = pullRequest.reviewers.find((reviewer) => reviewer.user === userId);
+
+      if (!reviewer) {
+        return {
+          status: ReviewStatusResponseType.NOT_A_REVIEWER,
+          data: null,
+        };
+      }
+
+      const updatedPullRequest = await this.pullRequestModel.findOneAndUpdate(
+        { _id: pullRequest._id },
+        { $set: { 'reviewers.$[reviewer].status': status } },
+        { arrayFilters: [{ 'reviewer.user': userId }], new: true, lean: true },
+      );
+
+      if (updatedPullRequest) {
+        return {
+          status: ReviewStatusResponseType.SUCCESS,
+          data: updatedPullRequest,
+        };
+      } else {
+        throw new UnprocessableEntityException('Pull Request not found');
+      }
+    } catch (error) {
+      throw error;
+    }
   }
 }

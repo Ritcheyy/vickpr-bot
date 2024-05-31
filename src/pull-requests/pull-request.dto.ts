@@ -5,6 +5,7 @@ enum PullRequestPriorityType {
   HIGH = 'high',
   MEDIUM = 'medium',
   LOW = 'low',
+  URGENT = 'urgent',
 }
 
 export class CreatePullRequestDto {

@@ -1,4 +1,6 @@
 import { ReviewerType } from './types';
+import { mapEmojiToStatus } from './utils';
+import { PullRequestStatusType } from './constants';
 
 export const _extractBlockFormValues = (submittedValues: any) => {
   const structuredValues: any = {};
@@ -31,7 +33,7 @@ export const _extractBlockFormValues = (submittedValues: any) => {
 
 /*
  * get reviewers and format as string...
- * @return format - "`@Ritcheyy`, `@Bliss`, `@Ritcheyy`"
+ * @return format - "@Ritcheyy, @John, @Deo"
  */
 export const getReviewers = (reviewers: ReviewerType[]) => {
   if (reviewers.length === 0) {
@@ -39,6 +41,18 @@ export const getReviewers = (reviewers: ReviewerType[]) => {
   }
 
   return reviewers.map((reviewer) => `<@${reviewer.user}>`).join(', ');
+};
+
+/*
+ * get reviewers and format as string...
+ * @return format - "@Ritcheyy ✅, @John, @Deo ❌"
+ */
+export const getReviewersWithStatusEmoji = (reviewers: ReviewerType[]) => {
+  if (reviewers.length === 0) {
+    return 'No reviewers';
+  }
+
+  return reviewers.map((reviewer) => `<@${reviewer.user}>${' ' + mapEmojiToStatus(reviewer.status)}`).join(', ');
 };
 
 /*

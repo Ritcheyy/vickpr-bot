@@ -1,3 +1,5 @@
+import { PullRequestStatusType } from './constants';
+
 export type SlackEventResponse = {
   token: string;
   team_id: string;
@@ -24,6 +26,7 @@ export enum EventTypes {
   CMD_SUBMIT = '/submit-pr',
   MODAL_SUBMIT = 'submit-pr-modal',
   VIEW_SUBMISSION = 'view_submission',
+  UPDATE_REVIEW_STATUS = 'update_review_status',
 }
 
 export type SubmitPullRequestType = {
@@ -40,5 +43,5 @@ export type SubmitPullRequestType = {
 
 export type ReviewerType = {
   user: string;
-  status: string;
+  status: PullRequestStatusType;
 };

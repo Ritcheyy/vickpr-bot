@@ -1,7 +1,7 @@
-import { _capitalizeString, getReviewers, getTicketIdFromLink } from '../helpers';
+import Config from '../../../config';
+import { _capitalizeString, getReviewers, getReviewersWithStatusEmoji, getTicketIdFromLink } from '../helpers';
 import { FancyPrType } from '../constants';
 import { PullRequest } from '../../pull-requests/schemas/pull-request.schema';
-import Config from '../../../config';
 
 export const submitPullRequestBlock = (userId: string = '') => {
   const projectOptions =
@@ -349,9 +349,13 @@ export const submitSuccessBlock = (pullRequestTitle: string, pullRequestType: st
   ];
 };
 
-export const newSubmissionNotificationBlock = (pullRequest: PullRequest) => {
+export const newSubmissionNotificationBlock = (pullRequest: PullRequest, isUpdate: boolean = false) => {
+  const formattedReviewers = isUpdate
+    ? getReviewersWithStatusEmoji(pullRequest.reviewers)
+    : getReviewers(pullRequest.reviewers);
+
   return {
-    color: '#33a12f',
+    color: '#33a12f', // todo: change color when merged
     fallback: `<@${pullRequest.author}> submitted a pull request  :rocket:`,
     blocks: [
       {
@@ -360,9 +364,18 @@ export const newSubmissionNotificationBlock = (pullRequest: PullRequest) => {
           type: 'mrkdwn',
           text: `<@${pullRequest.author}> submitted a pull request  :rocket:\n*<${pullRequest.link}|${_capitalizeString(pullRequest.type)} - ${_capitalizeString(pullRequest.title)}>*`,
         },
+        // todo: if status is merged, don't return an accessory
         accessory: {
           type: 'overflow',
           options: [
+            {
+              text: {
+                type: 'plain_text',
+                emoji: true,
+                text: ':hourglass_flowing_sand:  Reviewing',
+              },
+              value: 'reviewing',
+            },
             {
               text: {
                 type: 'plain_text',
@@ -377,7 +390,7 @@ export const newSubmissionNotificationBlock = (pullRequest: PullRequest) => {
                 emoji: true,
                 text: ':speech_balloon:  Commented',
               },
-              value: 'value-1',
+              value: 'commented',
             },
             {
               text: {
@@ -385,7 +398,7 @@ export const newSubmissionNotificationBlock = (pullRequest: PullRequest) => {
                 emoji: true,
                 text: ':white_check_mark:  Merged',
               },
-              value: 'value-2',
+              value: 'merged',
             },
             {
               text: {
@@ -393,10 +406,10 @@ export const newSubmissionNotificationBlock = (pullRequest: PullRequest) => {
                 emoji: true,
                 text: ':x:  Declined',
               },
-              value: 'value-3',
+              value: 'declined',
             },
           ],
-          action_id: 'overflow-action',
+          action_id: 'update_review_status',
         },
       },
       {
@@ -424,7 +437,7 @@ export const newSubmissionNotificationBlock = (pullRequest: PullRequest) => {
           },
           {
             type: 'mrkdwn',
-            text: `*Reviewers*\n${getReviewers(pullRequest.reviewers)}`,
+            text: `*Reviewers*\n${formattedReviewers}`,
           },
         ],
       },

@@ -4,10 +4,11 @@ import { Injectable } from '@nestjs/common';
 import { App, ExpressReceiver } from '@slack/bolt';
 import { ValidationError } from 'class-validator';
 import Config from '../../config';
-import { EventTypes, SubmitPullRequestType } from '../common/types';
-import { submitPullRequestBlock, submitSuccessBlock, newSubmissionNotificationBlock } from '../common/blocks/submit';
-import { PullRequestsService } from '../pull-requests/pull-requests.service';
 import { _extractBlockFormValues } from '../common/helpers';
+import { PullRequestStatusType, ReviewStatusResponseType } from '../common/constants';
+import { EventTypes, SubmitPullRequestType } from '../common/types';
+import { PullRequestsService } from '../pull-requests/pull-requests.service';
+import { submitPullRequestBlock, submitSuccessBlock, newSubmissionNotificationBlock } from '../common/blocks/submit';
 
 @Injectable()
 export class SlackService {
@@ -41,6 +42,7 @@ export class SlackService {
 
     // Action Events
     this.boltApp.action(EventTypes.VIEW_SUBMISSION, ({ ack }) => ack());
+    this.boltApp.action(EventTypes.UPDATE_REVIEW_STATUS, this.handleReviewStatusUpdate.bind(this));
   }
 
   getApp() {
@@ -108,6 +110,7 @@ export class SlackService {
         text: 'Your pull request has been successfully submitted!  :tada:',
         blocks: submitSuccessBlock(structuredValues.title, structuredValues.type, permalink),
       });
+      return;
     } catch (errors) {
       console.log(errors);
       if (!(errors instanceof Array && errors[0] instanceof ValidationError)) {
@@ -119,6 +122,46 @@ export class SlackService {
         });
       }
     }
+  }
+
+  async handleReviewStatusUpdate({ ack, body, client }) {
+    await ack();
+
+    const { message, user, actions } = body;
+    const statusValue = actions[0].selected_option.value;
+
+    const pullRequest = await this.pullRequestsService.findByMessageTimestamp(message.ts);
+
+    if (!pullRequest) {
+      await client.chat.postEphemeral({
+        channel: Config.AUTHORIZED_CHANNEL_ID,
+        user: user.id,
+        text: "Sorry, I can't find the pull request submission. Please try again later.",
+      });
+      return;
+    }
+
+    const { status: reviewStatusRes, data: updatedPullRequest } = await this.pullRequestsService.updateReviewStatus(
+      pullRequest,
+      user.id,
+      statusValue,
+    );
+
+    if (reviewStatusRes === ReviewStatusResponseType.NOT_A_REVIEWER) {
+      await client.chat.postEphemeral({
+        channel: Config.AUTHORIZED_CHANNEL_ID,
+        user: user.id,
+        text: 'I am unable perform this action, you are not listed as a reviewer for this pull request.',
+      });
+      return;
+    }
+
+    await client.chat.update({
+      channel: Config.AUTHORIZED_CHANNEL_ID,
+      ts: message.ts,
+      attachments: [newSubmissionNotificationBlock(updatedPullRequest, true)],
+    });
+    return;
   }
 
   async testAction({ ack, client }) {
@@ -137,15 +180,15 @@ export class SlackService {
       reviewers: [
         {
           user: 'U06CZSMLP2T',
-          status: 'pending',
+          status: 'pending' as PullRequestStatusType,
         },
       ],
     };
 
-    // client.chat.postMessage({
-    //   channel: body.user_id,
-    //   text: 'Your pull request has been successfully submitted!  :tada:',
-    //   blocks: submitSuccessBlock('Feat: Payment Integration'),
+    // await client.chat.postEphemeral({
+    //   channel: Config.AUTHORIZED_CHANNEL_ID,
+    //   user: body.user.id,
+    //   text: 'There was an error with your submission. Please try again later.',
     // });
 
     await client.chat.postMessage({

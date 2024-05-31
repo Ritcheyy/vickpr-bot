@@ -2,16 +2,22 @@ export enum PullRequestStatusType {
   PENDING = 'pending',
   APPROVED = 'approved',
   COMMENTED = 'commented',
-  'IN-REVIEW' = 'in-review',
+  REVIEWING = 'reviewing',
   REJECTED = 'rejected',
+  DECLINED = 'declined',
   MERGED = 'merged',
+}
+
+export enum ReviewStatusResponseType {
+  NOT_A_REVIEWER = 'NOT_A_REVIEWER',
+  SUCCESS = 'SUCCESS',
 }
 
 export enum PendingPullRequestStatusType {
   PENDING = 'pending',
   APPROVED = 'approved',
   COMMENTED = 'commented',
-  'IN-REVIEW' = 'in-review',
+  REVIEWING = 'reviewing',
 }
 
 export enum FancyPrType {
