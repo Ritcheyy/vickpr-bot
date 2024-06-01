@@ -151,30 +151,7 @@ export class SlackService {
       statusValue,
     );
 
-    if (reviewStatusRes === ReviewStatusResponseType.NOT_A_REVIEWER) {
-      await client.chat.postEphemeral({
-        channel: Config.AUTHORIZED_CHANNEL_ID,
-        user: user.id,
-        text: 'I am unable perform this action, you are not listed as a reviewer for this pull request.',
-      });
-      return;
-    }
-
-    if (reviewStatusRes === ReviewStatusResponseType.NOT_THE_MERGER) {
-      await client.chat.postEphemeral({
-        channel: Config.AUTHORIZED_CHANNEL_ID,
-        user: user.id,
-        text: 'I am unable perform this action, you are not listed as the merge manager for this pull request.',
-      });
-      return;
-    }
-
-    await client.chat.update({
-      channel: Config.AUTHORIZED_CHANNEL_ID,
-      ts: message.ts,
-      attachments: [newSubmissionNotificationBlock(updatedPullRequest, true)],
-    });
-    return;
+    await this.handleStatusUpdateResponse({ reviewStatusRes, updatedPullRequest, body, client });
   }
 
   async testAction({ ack, client }) {
@@ -208,5 +185,34 @@ export class SlackService {
       channel: Config.AUTHORIZED_CHANNEL_ID,
       attachments: [newSubmissionNotificationBlock(TEST_DATA)],
     });
+  }
+
+  async handleStatusUpdateResponse({ reviewStatusRes, updatedPullRequest, body, client }) {
+    const { message, user } = body;
+
+    if (reviewStatusRes === ReviewStatusResponseType.NOT_A_REVIEWER) {
+      await client.chat.postEphemeral({
+        channel: Config.AUTHORIZED_CHANNEL_ID,
+        user: user.id,
+        text: 'I am unable perform this action, you are not listed as a reviewer for this pull request.',
+      });
+      return;
+    }
+
+    if (reviewStatusRes === ReviewStatusResponseType.NOT_THE_MERGER) {
+      await client.chat.postEphemeral({
+        channel: Config.AUTHORIZED_CHANNEL_ID,
+        user: user.id,
+        text: 'I am unable perform this action, you are not listed as the merge manager for this pull request.',
+      });
+      return;
+    }
+
+    await client.chat.update({
+      channel: Config.AUTHORIZED_CHANNEL_ID,
+      ts: message.ts,
+      attachments: [newSubmissionNotificationBlock(updatedPullRequest, true)],
+    });
+    return;
   }
 }
