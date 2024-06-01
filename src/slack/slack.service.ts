@@ -3,13 +3,13 @@
 import { ValidationError } from 'class-validator';
 import { Injectable } from '@nestjs/common';
 import { App, ExpressReceiver } from '@slack/bolt';
-import { newSubmissionNotificationBlock, submitPullRequestBlock, submitSuccessBlock } from '@/common/blocks/submit';
+import { StatusUpdateNotificationBlock } from '@/common/blocks/notifications';
+import { NewSubmissionBlock, SubmitPullRequestBlock, SubmitSuccessBlock } from '@/common/blocks/submit';
 import { NotificationDispatchTypes, PullRequestStatus, ReviewStatusResponse } from '@/common/constants';
 import { _extractBlockFormValues } from '@/common/helpers';
 import { EventTypes, SubmitPullRequestType } from '@/common/types';
 import { PullRequestsService } from '@/pull-requests/pull-requests.service';
 import Config from '../../config';
-import { statusUpdateNotificationBlock } from '@/common/blocks/notifications';
 
 @Injectable()
 export class SlackService {
@@ -71,7 +71,7 @@ export class SlackService {
     try {
       await client.views.open({
         trigger_id: body.trigger_id,
-        view: submitPullRequestBlock(body.user_id),
+        view: SubmitPullRequestBlock(body.user_id),
       });
     } catch (error) {
       console.log(error);
@@ -93,7 +93,7 @@ export class SlackService {
       // Submit pull request to PR Channel
       const messageResponse = await client.chat.postMessage({
         channel: Config.AUTHORIZED_CHANNEL_ID,
-        attachments: [newSubmissionNotificationBlock(newPullRequest)],
+        attachments: NewSubmissionBlock(newPullRequest),
       });
 
       // Update the message timestamp
@@ -113,7 +113,7 @@ export class SlackService {
       await client.chat.postMessage({
         channel: newPullRequest.author,
         text: 'Your pull request has been successfully submitted!  :tada:',
-        blocks: submitSuccessBlock(structuredValues.title, structuredValues.type, permalink),
+        blocks: SubmitSuccessBlock(structuredValues.title, structuredValues.type, permalink),
       });
       return;
     } catch (errors) {
@@ -200,7 +200,7 @@ export class SlackService {
 
     await client.chat.postMessage({
       channel: Config.AUTHORIZED_CHANNEL_ID,
-      attachments: [newSubmissionNotificationBlock(TEST_DATA)],
+      attachments: NewSubmissionBlock(TEST_DATA),
     });
   }
 
@@ -228,7 +228,7 @@ export class SlackService {
     await client.chat.update({
       channel: Config.AUTHORIZED_CHANNEL_ID,
       ts: message.ts,
-      attachments: [newSubmissionNotificationBlock(updatedPullRequest, true)],
+      attachments: NewSubmissionBlock(updatedPullRequest, true),
     });
     return true;
   }
@@ -256,7 +256,7 @@ export class SlackService {
         channel: Config.AUTHORIZED_CHANNEL_ID,
         thread_ts: body.message.ts,
         text: notificationText,
-        blocks: statusUpdateNotificationBlock(notificationText),
+        blocks: StatusUpdateNotificationBlock(notificationText),
       });
       return;
     }

@@ -3,7 +3,7 @@ import Config from '../../../config';
 import { FancyPrType } from '../constants';
 import { _capitalizeString, getReviewers, getReviewersWithStatusEmoji, getTicketIdFromLink } from '../helpers';
 
-export const submitPullRequestBlock = (userId: string = '') => {
+export const SubmitPullRequestBlock = (userId: string = '') => {
   const projectOptions =
     Config.APP_PROJECTS.map((project) => {
       return {
@@ -295,7 +295,7 @@ export const submitPullRequestBlock = (userId: string = '') => {
   };
 };
 
-export const submitSuccessBlock = (pullRequestTitle: string, pullRequestType: string, messageLink: string) => {
+export const SubmitSuccessBlock = (pullRequestTitle: string, pullRequestType: string, messageLink: string) => {
   return [
     {
       type: 'section',
@@ -349,101 +349,103 @@ export const submitSuccessBlock = (pullRequestTitle: string, pullRequestType: st
   ];
 };
 
-export const newSubmissionNotificationBlock = (pullRequest: PullRequest, isUpdate: boolean = false) => {
+export const NewSubmissionBlock = (pullRequest: PullRequest, isUpdate: boolean = false) => {
   const formattedReviewers = isUpdate
     ? getReviewersWithStatusEmoji(pullRequest.reviewers)
     : getReviewers(pullRequest.reviewers);
 
-  return {
-    color: '#33a12f', // todo: change color when merged
-    fallback: `<@${pullRequest.author}> submitted a pull request  :rocket:`,
-    blocks: [
-      {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: `<@${pullRequest.author}> submitted a pull request  :rocket:\n*<${pullRequest.link}|${_capitalizeString(pullRequest.type)} - ${_capitalizeString(pullRequest.title)}>*`,
+  return [
+    {
+      color: '#33a12f', // todo: change color when merged
+      fallback: `<@${pullRequest.author}> submitted a pull request  :rocket:`,
+      blocks: [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `<@${pullRequest.author}> submitted a pull request  :rocket:\n*<${pullRequest.link}|${_capitalizeString(pullRequest.type)} - ${_capitalizeString(pullRequest.title)}>*`,
+          },
+          // todo: if status is merged, don't return an accessory
+          accessory: {
+            type: 'overflow',
+            options: [
+              {
+                text: {
+                  type: 'plain_text',
+                  emoji: true,
+                  text: ':hourglass_flowing_sand:  Reviewing',
+                },
+                value: 'reviewing',
+              },
+              {
+                text: {
+                  type: 'plain_text',
+                  emoji: true,
+                  text: ':heavy_check_mark:  Approved',
+                },
+                value: 'approved',
+              },
+              {
+                text: {
+                  type: 'plain_text',
+                  emoji: true,
+                  text: ':speech_balloon:  Commented',
+                },
+                value: 'commented',
+              },
+              {
+                text: {
+                  type: 'plain_text',
+                  emoji: true,
+                  text: ':white_check_mark:  Merged',
+                },
+                value: 'merged',
+              },
+              {
+                text: {
+                  type: 'plain_text',
+                  emoji: true,
+                  text: ':x:  Declined',
+                },
+                value: 'declined',
+              },
+            ],
+            action_id: 'update_review_status',
+          },
         },
-        // todo: if status is merged, don't return an accessory
-        accessory: {
-          type: 'overflow',
-          options: [
+        {
+          type: 'section',
+          fields: [
             {
-              text: {
-                type: 'plain_text',
-                emoji: true,
-                text: ':hourglass_flowing_sand:  Reviewing',
-              },
-              value: 'reviewing',
+              type: 'mrkdwn',
+              text: `*Project*\n${pullRequest.project}`,
             },
             {
-              text: {
-                type: 'plain_text',
-                emoji: true,
-                text: ':heavy_check_mark:  Approved',
-              },
-              value: 'approved',
+              type: 'mrkdwn',
+              text: `*Type*\n${FancyPrType[pullRequest.type]}`,
             },
             {
-              text: {
-                type: 'plain_text',
-                emoji: true,
-                text: ':speech_balloon:  Commented',
-              },
-              value: 'commented',
+              type: 'mrkdwn',
+              text: `*Priority*\n${_capitalizeString(pullRequest.priority)}`,
             },
             {
-              text: {
-                type: 'plain_text',
-                emoji: true,
-                text: ':white_check_mark:  Merged',
-              },
-              value: 'merged',
+              type: 'mrkdwn',
+              text: `*Status*\n\`${_capitalizeString(pullRequest.status)}\``,
             },
             {
-              text: {
-                type: 'plain_text',
-                emoji: true,
-                text: ':x:  Declined',
-              },
-              value: 'declined',
+              type: 'mrkdwn',
+              text: `*Ticket*\n<${pullRequest.ticket}|${getTicketIdFromLink(pullRequest.ticket)}>`,
+            },
+            {
+              type: 'mrkdwn',
+              text: `*Reviewers*\n${formattedReviewers}`,
             },
           ],
-          action_id: 'update_review_status',
         },
-      },
-      {
-        type: 'section',
-        fields: [
-          {
-            type: 'mrkdwn',
-            text: `*Project*\n${pullRequest.project}`,
-          },
-          {
-            type: 'mrkdwn',
-            text: `*Type*\n${FancyPrType[pullRequest.type]}`,
-          },
-          {
-            type: 'mrkdwn',
-            text: `*Priority*\n${_capitalizeString(pullRequest.priority)}`,
-          },
-          {
-            type: 'mrkdwn',
-            text: `*Status*\n\`${_capitalizeString(pullRequest.status)}\``,
-          },
-          {
-            type: 'mrkdwn',
-            text: `*Ticket*\n<${pullRequest.ticket}|${getTicketIdFromLink(pullRequest.ticket)}>`,
-          },
-          {
-            type: 'mrkdwn',
-            text: `*Reviewers*\n${formattedReviewers}`,
-          },
-        ],
-      },
-      {
-        type: 'divider',
-      },
-    ],
-  };
+        {
+          type: 'divider',
+        },
+      ],
+    },
+  ];
 };

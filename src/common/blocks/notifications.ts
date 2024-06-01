@@ -1,4 +1,4 @@
-export const statusUpdateNotificationBlock = (text: string) => {
+export const StatusUpdateNotificationBlock = (text: string) => {
   return [
     {
       type: 'section',
