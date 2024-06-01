@@ -1,4 +1,4 @@
-export enum PullRequestStatusType {
+export enum PullRequestStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
   COMMENTED = 'commented',
@@ -8,13 +8,13 @@ export enum PullRequestStatusType {
   MERGED = 'merged',
 }
 
-export enum ReviewStatusResponseType {
+export enum ReviewStatusResponse {
   NOT_A_REVIEWER = 'NOT_A_REVIEWER',
   NOT_THE_MERGER = 'NOT_THE_MERGER',
   SUCCESS = 'SUCCESS',
 }
 
-export enum PendingPullRequestStatusType {
+export enum PendingPullRequestStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
   COMMENTED = 'commented',

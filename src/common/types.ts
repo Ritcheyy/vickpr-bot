@@ -1,4 +1,4 @@
-import { PullRequestStatusType } from './constants';
+import { PullRequestStatus } from './constants';
 
 export type SlackEventResponse = {
   token: string;
@@ -43,5 +43,5 @@ export type SubmitPullRequestType = {
 
 export type ReviewerType = {
   user: string;
-  status: PullRequestStatusType;
+  status: PullRequestStatus;
 };

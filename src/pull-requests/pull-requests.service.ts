@@ -3,7 +3,7 @@ import { plainToInstance } from 'class-transformer';
 import { ValidationError, validateOrReject } from 'class-validator';
 import { InjectModel } from '@nestjs/mongoose';
 import { Injectable, UnprocessableEntityException } from '@nestjs/common';
-import { PendingPullRequestStatusType, PullRequestStatusType, ReviewStatusResponseType } from '@/common/constants';
+import { PendingPullRequestStatus, PullRequestStatus, ReviewStatusResponse } from '@/common/constants';
 import { CreatePullRequestDto, UpdatePullRequestDto } from './pull-request.dto';
 import { PullRequest, PullRequestDocument } from './schemas/pull-request.schema';
 
@@ -24,7 +24,7 @@ export class PullRequestsService {
       // Transform reviewers data, add review status - pending
       pullRequestBody.reviewers = pullRequestBody.reviewers.map((reviewer) => ({
         user: reviewer,
-        status: PullRequestStatusType.PENDING,
+        status: PullRequestStatus.PENDING,
       }));
 
       const createdPullRequest = new this.pullRequestModel(pullRequestBody);
@@ -56,7 +56,7 @@ export class PullRequestsService {
   }
 
   async getAllPending() {
-    const pendingStatuses = Object.values(PendingPullRequestStatusType);
+    const pendingStatuses = Object.values(PendingPullRequestStatus);
 
     return this.pullRequestModel.find({ status: { $in: pendingStatuses } }).sort({ createdAt: -1 });
   }
@@ -84,14 +84,14 @@ export class PullRequestsService {
 
       if (!reviewer && !isMerger) {
         return {
-          status: ReviewStatusResponseType.NOT_A_REVIEWER,
+          status: ReviewStatusResponse.NOT_A_REVIEWER,
           data: null,
         };
       }
 
-      if (status === PullRequestStatusType.MERGED && !isMerger) {
+      if (status === PullRequestStatus.MERGED && !isMerger) {
         return {
-          status: ReviewStatusResponseType.NOT_THE_MERGER,
+          status: ReviewStatusResponse.NOT_THE_MERGER,
           data: null,
         };
       }
@@ -112,7 +112,7 @@ export class PullRequestsService {
 
       if (updatedPullRequest) {
         return {
-          status: ReviewStatusResponseType.SUCCESS,
+          status: ReviewStatusResponse.SUCCESS,
           data: updatedPullRequest,
         };
       } else {

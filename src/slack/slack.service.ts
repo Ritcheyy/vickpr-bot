@@ -4,7 +4,7 @@ import { ValidationError } from 'class-validator';
 import { Injectable } from '@nestjs/common';
 import { App, ExpressReceiver } from '@slack/bolt';
 import { newSubmissionNotificationBlock, submitPullRequestBlock, submitSuccessBlock } from '@/common/blocks/submit';
-import { PullRequestStatusType, ReviewStatusResponseType } from '@/common/constants';
+import { PullRequestStatus, ReviewStatusResponse } from '@/common/constants';
 import { _extractBlockFormValues } from '@/common/helpers';
 import { EventTypes, SubmitPullRequestType } from '@/common/types';
 import { PullRequestsService } from '@/pull-requests/pull-requests.service';
@@ -170,7 +170,7 @@ export class SlackService {
       reviewers: [
         {
           user: 'U06CZSMLP2T',
-          status: 'pending' as PullRequestStatusType,
+          status: 'pending' as PullRequestStatus,
         },
       ],
     };
@@ -190,7 +190,7 @@ export class SlackService {
   async handleStatusUpdateResponse({ reviewStatusRes, updatedPullRequest, body, client }) {
     const { message, user } = body;
 
-    if (reviewStatusRes === ReviewStatusResponseType.NOT_A_REVIEWER) {
+    if (reviewStatusRes === ReviewStatusResponse.NOT_A_REVIEWER) {
       await client.chat.postEphemeral({
         channel: Config.AUTHORIZED_CHANNEL_ID,
         user: user.id,
@@ -199,7 +199,7 @@ export class SlackService {
       return;
     }
 
-    if (reviewStatusRes === ReviewStatusResponseType.NOT_THE_MERGER) {
+    if (reviewStatusRes === ReviewStatusResponse.NOT_THE_MERGER) {
       await client.chat.postEphemeral({
         channel: Config.AUTHORIZED_CHANNEL_ID,
         user: user.id,

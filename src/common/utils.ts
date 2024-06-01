@@ -1,15 +1,15 @@
-import { PullRequestStatusType } from './constants';
+import { PullRequestStatus } from './constants';
 
-export const mapEmojiToStatus = (status: PullRequestStatusType) => {
+export const mapEmojiToStatus = (status: PullRequestStatus) => {
   switch (status) {
-    case PullRequestStatusType.REVIEWING:
+    case PullRequestStatus.REVIEWING:
       return ':hourglass_flowing_sand:';
-    case PullRequestStatusType.APPROVED:
-    case PullRequestStatusType.MERGED:
+    case PullRequestStatus.APPROVED:
+    case PullRequestStatus.MERGED:
       return ':white_check_mark:';
-    case PullRequestStatusType.COMMENTED:
+    case PullRequestStatus.COMMENTED:
       return ':speech_balloon:';
-    case PullRequestStatusType.DECLINED:
+    case PullRequestStatus.DECLINED:
       return ':x:';
     default:
       return '';
