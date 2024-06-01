@@ -109,7 +109,7 @@ export class SlackService {
       });
 
       // Send success message
-      // Todo: Get if user submits through bot user or channel
+      // Todo(not sure if this is necessary): Get if user submits through bot user dm or channel
       await client.chat.postMessage({
         channel: newPullRequest.author,
         text: 'Your pull request has been successfully submitted!  :tada:',
@@ -209,13 +209,13 @@ export class SlackService {
           notificationText = `Hey <@${stakeholders.merger}> :wave:\n\nAll reviewers have approved this pull request. Please merge it if it looks good to you.\n\nThank you Boss! :saluting_face:`;
           break;
         case NotificationDispatchTypes.NEW_COMMENT:
-          notificationText = `Hey <@${stakeholders.author}> :wave:\n\n<@${stakeholders.reviewer}> left a comment on your pull request. Please attend to it.\n\nThank you! :saluting_face:`;
+          notificationText = `Hey <@${stakeholders.author}> :wave:\n\n<@${stakeholders.reviewer}> left a comment on your pull request. Please attend to it.\n\nThank you!`;
           break;
         case NotificationDispatchTypes.DECLINED:
           notificationText = `Hey <@${stakeholders.author}> :wave:\n\nUnfortunately, your pull request has been declined :pensive:. Please review the feedback and make the necessary changes.\n\nThank you!`;
           break;
         case NotificationDispatchTypes.MERGED:
-          notificationText = `Hey <@${stakeholders.author}> :wave:\n\nYour pull request has been merged. :rocket:\n\nThank you! :saluting_face:`;
+          notificationText = `Hey <@${stakeholders.author}> :wave:\n\nYour pull request has been merged. :rocket:\n\nThank you!`;
           break;
       }
 
