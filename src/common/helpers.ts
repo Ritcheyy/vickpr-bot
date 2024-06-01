@@ -1,5 +1,6 @@
 import { ReviewerType } from './types';
 import { mapEmojiToStatus } from './utils';
+import { PullRequestStatus } from '@/common/constants';
 
 export const _extractBlockFormValues = (submittedValues: any) => {
   const structuredValues: any = {};
@@ -52,6 +53,21 @@ export const getReviewersWithStatusEmoji = (reviewers: ReviewerType[]) => {
   }
 
   return reviewers.map((reviewer) => `<@${reviewer.user}>${' ' + mapEmojiToStatus(reviewer.status)}`).join(', ');
+};
+
+/*
+ * get attachment color based on status
+ * @return color hex
+ */
+export const getAttachmentColor = (status: string) => {
+  switch (status) {
+    case PullRequestStatus.MERGED:
+      return '#33a12f';
+    case PullRequestStatus.DECLINED:
+      return '#bb3638';
+    default:
+      return '#d4ad3b';
+  }
 };
 
 /*

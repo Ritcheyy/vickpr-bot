@@ -153,7 +153,7 @@ export class SlackService {
     } = await this.pullRequestsService.updateReviewStatus(pullRequest, user.id, statusValue);
 
     // Update the pull request message in the channel
-    const statusUpdateResponse = await this.handleStatusUpdateResponse({
+    const statusUpdateResponse = await this.handleSubmissionMessageUpdate({
       reviewStatusRes,
       updatedPullRequest,
       body,
@@ -171,40 +171,7 @@ export class SlackService {
     }
   }
 
-  async testAction({ ack, client }) {
-    await ack();
-
-    const TEST_DATA = {
-      title: 'fsgd',
-      link: 'https://www.google.com/',
-      type: 'feature',
-      status: 'pending',
-      project: 'api',
-      priority: 'medium',
-      ticket: 'https://www.google.com/',
-      merger: 'U03DB6TJZ55',
-      author: 'U03DRM6SHA7',
-      reviewers: [
-        {
-          user: 'U06CZSMLP2T',
-          status: 'pending' as PullRequestStatus,
-        },
-      ],
-    };
-
-    // await client.chat.postEphemeral({
-    //   channel: Config.AUTHORIZED_CHANNEL_ID,
-    //   user: body.user.id,
-    //   text: 'There was an error with your submission. Please try again later.',
-    // });
-
-    await client.chat.postMessage({
-      channel: Config.AUTHORIZED_CHANNEL_ID,
-      attachments: NewSubmissionBlock(TEST_DATA),
-    });
-  }
-
-  async handleStatusUpdateResponse({ reviewStatusRes, updatedPullRequest, body, client }) {
+  async handleSubmissionMessageUpdate({ reviewStatusRes, updatedPullRequest, body, client }) {
     const { message, user } = body;
 
     if (reviewStatusRes === ReviewStatusResponse.NOT_A_REVIEWER) {
@@ -260,5 +227,38 @@ export class SlackService {
       });
       return;
     }
+  }
+
+  async testAction({ ack, client }) {
+    await ack();
+
+    const TEST_DATA = {
+      title: 'fsgd',
+      link: 'https://www.google.com/',
+      type: 'feature',
+      status: 'pending',
+      project: 'api',
+      priority: 'medium',
+      ticket: 'https://www.google.com/',
+      merger: 'U03DB6TJZ55',
+      author: 'U03DRM6SHA7',
+      reviewers: [
+        {
+          user: 'U06CZSMLP2T',
+          status: 'pending' as PullRequestStatus,
+        },
+      ],
+    };
+
+    // await client.chat.postEphemeral({
+    //   channel: Config.AUTHORIZED_CHANNEL_ID,
+    //   user: body.user.id,
+    //   text: 'There was an error with your submission. Please try again later.',
+    // });
+
+    await client.chat.postMessage({
+      channel: Config.AUTHORIZED_CHANNEL_ID,
+      attachments: NewSubmissionBlock(TEST_DATA),
+    });
   }
 }

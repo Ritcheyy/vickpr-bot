@@ -1,7 +1,13 @@
 import { PullRequest } from '@/pull-requests/schemas/pull-request.schema';
 import Config from '../../../config';
-import { FancyPrType } from '../constants';
-import { _capitalizeString, getReviewers, getReviewersWithStatusEmoji, getTicketIdFromLink } from '../helpers';
+import { FancyPrType, PullRequestStatus } from '../constants';
+import {
+  _capitalizeString,
+  getAttachmentColor,
+  getReviewers,
+  getReviewersWithStatusEmoji,
+  getTicketIdFromLink,
+} from '../helpers';
 
 export const SubmitPullRequestBlock = (userId: string = '') => {
   const projectOptions =
@@ -354,9 +360,59 @@ export const NewSubmissionBlock = (pullRequest: PullRequest, isUpdate: boolean =
     ? getReviewersWithStatusEmoji(pullRequest.reviewers)
     : getReviewers(pullRequest.reviewers);
 
+  const accessory =
+    pullRequest.status === PullRequestStatus.MERGED
+      ? undefined
+      : {
+          type: 'overflow',
+          options: [
+            {
+              text: {
+                type: 'plain_text',
+                emoji: true,
+                text: ':hourglass_flowing_sand:  Reviewing',
+              },
+              value: 'reviewing',
+            },
+            {
+              text: {
+                type: 'plain_text',
+                emoji: true,
+                text: ':heavy_check_mark:  Approved',
+              },
+              value: 'approved',
+            },
+            {
+              text: {
+                type: 'plain_text',
+                emoji: true,
+                text: ':speech_balloon:  Commented',
+              },
+              value: 'commented',
+            },
+            {
+              text: {
+                type: 'plain_text',
+                emoji: true,
+                text: ':white_check_mark:  Merged',
+              },
+              value: 'merged',
+            },
+            {
+              text: {
+                type: 'plain_text',
+                emoji: true,
+                text: ':x:  Declined',
+              },
+              value: 'declined',
+            },
+          ],
+          action_id: 'update_review_status',
+        };
+
   return [
     {
-      color: '#33a12f', // todo: change color when merged
+      color: getAttachmentColor(pullRequest.status),
       fallback: `<@${pullRequest.author}> submitted a pull request  :rocket:`,
       blocks: [
         {
@@ -365,53 +421,7 @@ export const NewSubmissionBlock = (pullRequest: PullRequest, isUpdate: boolean =
             type: 'mrkdwn',
             text: `<@${pullRequest.author}> submitted a pull request  :rocket:\n*<${pullRequest.link}|${_capitalizeString(pullRequest.type)} - ${_capitalizeString(pullRequest.title)}>*`,
           },
-          // todo: if status is merged, don't return an accessory
-          accessory: {
-            type: 'overflow',
-            options: [
-              {
-                text: {
-                  type: 'plain_text',
-                  emoji: true,
-                  text: ':hourglass_flowing_sand:  Reviewing',
-                },
-                value: 'reviewing',
-              },
-              {
-                text: {
-                  type: 'plain_text',
-                  emoji: true,
-                  text: ':heavy_check_mark:  Approved',
-                },
-                value: 'approved',
-              },
-              {
-                text: {
-                  type: 'plain_text',
-                  emoji: true,
-                  text: ':speech_balloon:  Commented',
-                },
-                value: 'commented',
-              },
-              {
-                text: {
-                  type: 'plain_text',
-                  emoji: true,
-                  text: ':white_check_mark:  Merged',
-                },
-                value: 'merged',
-              },
-              {
-                text: {
-                  type: 'plain_text',
-                  emoji: true,
-                  text: ':x:  Declined',
-                },
-                value: 'declined',
-              },
-            ],
-            action_id: 'update_review_status',
-          },
+          accessory,
         },
         {
           type: 'section',
