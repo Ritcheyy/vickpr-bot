@@ -4,11 +4,12 @@ import { ValidationError } from 'class-validator';
 import { Injectable } from '@nestjs/common';
 import { App, ExpressReceiver } from '@slack/bolt';
 import { newSubmissionNotificationBlock, submitPullRequestBlock, submitSuccessBlock } from '@/common/blocks/submit';
-import { PullRequestStatus, ReviewStatusResponse } from '@/common/constants';
+import { NotificationDispatchTypes, PullRequestStatus, ReviewStatusResponse } from '@/common/constants';
 import { _extractBlockFormValues } from '@/common/helpers';
 import { EventTypes, SubmitPullRequestType } from '@/common/types';
 import { PullRequestsService } from '@/pull-requests/pull-requests.service';
 import Config from '../../config';
+import { statusUpdateNotificationBlock } from '@/common/blocks/notifications';
 
 @Injectable()
 export class SlackService {
@@ -99,7 +100,7 @@ export class SlackService {
       newPullRequest.message = {
         timestamp: messageResponse.ts,
       };
-      newPullRequest.save();
+      await newPullRequest.save();
 
       // Retrieve the message permalink
       const { permalink } = await client.chat.getPermalink({
@@ -145,13 +146,29 @@ export class SlackService {
       return;
     }
 
-    const { status: reviewStatusRes, data: updatedPullRequest } = await this.pullRequestsService.updateReviewStatus(
-      pullRequest,
-      user.id,
-      statusValue,
-    );
+    const {
+      status: reviewStatusRes,
+      data: updatedPullRequest,
+      notificationDispatchType,
+    } = await this.pullRequestsService.updateReviewStatus(pullRequest, user.id, statusValue);
 
-    await this.handleStatusUpdateResponse({ reviewStatusRes, updatedPullRequest, body, client });
+    // Update the pull request message in the channel
+    const statusUpdateResponse = await this.handleStatusUpdateResponse({
+      reviewStatusRes,
+      updatedPullRequest,
+      body,
+      client,
+    });
+
+    if (statusUpdateResponse) {
+      // Send notifications to stakeholders depending on review status
+      const stakeholders = {
+        reviewer: user.id,
+        author: updatedPullRequest.author,
+        merger: updatedPullRequest.merger,
+      };
+      await this.handleNotificationDispatch({ notificationDispatchType, stakeholders, body, client });
+    }
   }
 
   async testAction({ ack, client }) {
@@ -196,7 +213,7 @@ export class SlackService {
         user: user.id,
         text: 'I am unable perform this action, you are not listed as a reviewer for this pull request.',
       });
-      return;
+      return false;
     }
 
     if (reviewStatusRes === ReviewStatusResponse.NOT_THE_MERGER) {
@@ -205,7 +222,7 @@ export class SlackService {
         user: user.id,
         text: 'I am unable perform this action, you are not listed as the merge manager for this pull request.',
       });
-      return;
+      return false;
     }
 
     await client.chat.update({
@@ -213,6 +230,35 @@ export class SlackService {
       ts: message.ts,
       attachments: [newSubmissionNotificationBlock(updatedPullRequest, true)],
     });
-    return;
+    return true;
+  }
+
+  async handleNotificationDispatch({ notificationDispatchType, stakeholders, body, client }) {
+    if (notificationDispatchType !== NotificationDispatchTypes.NONE) {
+      let notificationText: string = null;
+
+      switch (notificationDispatchType) {
+        case NotificationDispatchTypes.ALL_APPROVED:
+          notificationText = `Hey <@${stakeholders.merger}> :wave:\n\nAll reviewers have approved this pull request. Please merge it if it looks good to you.\n\nThank you Boss! :saluting_face:`;
+          break;
+        case NotificationDispatchTypes.NEW_COMMENT:
+          notificationText = `Hey <@${stakeholders.author}> :wave:\n\n<@${stakeholders.reviewer}> left a comment on your pull request. Please attend to it.\n\nThank you! :saluting_face:`;
+          break;
+        case NotificationDispatchTypes.DECLINED:
+          notificationText = `Hey <@${stakeholders.author}> :wave:\n\nUnfortunately, your pull request has been declined :pensive:. Please review the feedback and make the necessary changes.\n\nThank you!`;
+          break;
+        case NotificationDispatchTypes.MERGED:
+          notificationText = `Hey <@${stakeholders.author}> :wave:\n\nYour pull request has been merged. :rocket:\n\nThank you! :saluting_face:`;
+          break;
+      }
+
+      await client.chat.postMessage({
+        channel: Config.AUTHORIZED_CHANNEL_ID,
+        thread_ts: body.message.ts,
+        text: notificationText,
+        blocks: statusUpdateNotificationBlock(notificationText),
+      });
+      return;
+    }
   }
 }

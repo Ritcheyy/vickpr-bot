@@ -3,7 +3,12 @@ import { plainToInstance } from 'class-transformer';
 import { ValidationError, validateOrReject } from 'class-validator';
 import { InjectModel } from '@nestjs/mongoose';
 import { Injectable, UnprocessableEntityException } from '@nestjs/common';
-import { PendingPullRequestStatus, PullRequestStatus, ReviewStatusResponse } from '@/common/constants';
+import {
+  NotificationDispatchTypes,
+  PendingPullRequestStatus,
+  PullRequestStatus,
+  ReviewStatusResponse,
+} from '@/common/constants';
 import { CreatePullRequestDto, UpdatePullRequestDto } from './pull-request.dto';
 import { PullRequest, PullRequestDocument } from './schemas/pull-request.schema';
 
@@ -86,6 +91,7 @@ export class PullRequestsService {
         return {
           status: ReviewStatusResponse.NOT_A_REVIEWER,
           data: null,
+          notificationDispatchType: NotificationDispatchTypes.NONE,
         };
       }
 
@@ -93,6 +99,7 @@ export class PullRequestsService {
         return {
           status: ReviewStatusResponse.NOT_THE_MERGER,
           data: null,
+          notificationDispatchType: NotificationDispatchTypes.NONE,
         };
       }
 
@@ -111,15 +118,39 @@ export class PullRequestsService {
       }
 
       if (updatedPullRequest) {
+        // check if it is the last approval needed - everyone has approved
+        const hasTotalApprovals = updatedPullRequest.reviewers.every(
+          (reviewer) => reviewer.status === PullRequestStatus.APPROVED,
+        );
+
         return {
           status: ReviewStatusResponse.SUCCESS,
           data: updatedPullRequest,
+          notificationDispatchType: this.getNotificationDispatchType(status, hasTotalApprovals),
         };
       } else {
         throw new UnprocessableEntityException('Pull request could not be updated');
       }
     } catch (error) {
       throw error;
+    }
+  }
+
+  getNotificationDispatchType(status: string, hasTotalApprovals: boolean = false) {
+    switch (status) {
+      case PullRequestStatus.APPROVED:
+        if (hasTotalApprovals) {
+          return NotificationDispatchTypes.ALL_APPROVED;
+        }
+        return NotificationDispatchTypes.NONE;
+      case PullRequestStatus.COMMENTED:
+        return NotificationDispatchTypes.NEW_COMMENT;
+      case PullRequestStatus.DECLINED:
+        return NotificationDispatchTypes.DECLINED;
+      case PullRequestStatus.MERGED:
+        return NotificationDispatchTypes.MERGED;
+      default:
+        return NotificationDispatchTypes.NONE;
     }
   }
 }

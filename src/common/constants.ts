@@ -21,6 +21,14 @@ export enum PendingPullRequestStatus {
   REVIEWING = 'reviewing',
 }
 
+export enum NotificationDispatchTypes {
+  ALL_APPROVED = 'ALL_APPROVED',
+  NEW_COMMENT = 'NEW_COMMENT',
+  DECLINED = 'DECLINED',
+  MERGED = 'MERGED',
+  NONE = 'NONE',
+}
+
 export enum FancyPrType {
   feature = 'Feature :sparkles:',
   bugfix = 'Bugfix :bug:',

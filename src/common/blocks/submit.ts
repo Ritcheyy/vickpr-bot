@@ -1,5 +1,5 @@
+import { PullRequest } from '@/pull-requests/schemas/pull-request.schema';
 import Config from '../../../config';
-import { PullRequest } from '../../pull-requests/schemas/pull-request.schema';
 import { FancyPrType } from '../constants';
 import { _capitalizeString, getReviewers, getReviewersWithStatusEmoji, getTicketIdFromLink } from '../helpers';
 
