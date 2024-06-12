@@ -1,5 +1,3 @@
-import { PullRequestStatus } from './constants';
-
 export type SlackEventResponse = {
   token: string;
   team_id: string;
@@ -37,11 +35,18 @@ export type SubmitPullRequestType = {
   priority: string;
   ticket: string;
   status?: string;
-  merger: string;
-  reviewers: string[];
+  merger: User;
+  author: User;
+  reviewers: ReviewerType[];
+};
+
+export type User = {
+  id: string;
+  name: string;
+  display_name: string;
 };
 
 export type ReviewerType = {
-  user: string;
-  status: PullRequestStatus;
+  user: User;
+  status: string;
 };

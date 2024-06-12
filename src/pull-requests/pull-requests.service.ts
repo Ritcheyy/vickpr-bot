@@ -1,6 +1,6 @@
-import { Model, isValidObjectId } from 'mongoose';
+import { isValidObjectId, Model } from 'mongoose';
 import { plainToInstance } from 'class-transformer';
-import { ValidationError, validateOrReject } from 'class-validator';
+import { validateOrReject } from 'class-validator';
 import { InjectModel } from '@nestjs/mongoose';
 import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import {
@@ -19,35 +19,26 @@ export class PullRequestsService {
     private pullRequestModel: Model<PullRequest>,
   ) {}
 
-  async create(pullRequestBody: CreatePullRequestDto, blockIdMapping?: any, ack?: any) {
+  async validatePullRequestData(pullRequestBody: any) {
+    try {
+      // validate here, since it's not routing through http
+      const newPullRequest = plainToInstance(CreatePullRequestDto, pullRequestBody);
+
+      await validateOrReject(newPullRequest);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async create(pullRequestBody: CreatePullRequestDto) {
     const newPullRequest = plainToInstance(CreatePullRequestDto, pullRequestBody);
 
     try {
-      // validate here, since it's not routing through http
       await validateOrReject(newPullRequest);
 
-      // Transform reviewers data, add review status - pending
-      pullRequestBody.reviewers = pullRequestBody.reviewers.map((reviewer) => ({
-        user: reviewer,
-        status: PullRequestStatus.PENDING,
-      }));
-
       const createdPullRequest = new this.pullRequestModel(pullRequestBody);
-      const savedPullRequest = await createdPullRequest.save();
-
-      await ack();
-      return savedPullRequest;
+      return await createdPullRequest.save();
     } catch (errors) {
-      if (errors instanceof Array && errors[0] instanceof ValidationError) {
-        const formattedError = errors.reduce(
-          (acc, error) => ({ ...acc, [blockIdMapping[error.property]]: Object.values(error.constraints)[0] }),
-          {},
-        );
-        ack({
-          response_action: 'errors',
-          errors: formattedError,
-        });
-      }
       throw errors;
     }
   }
@@ -83,8 +74,8 @@ export class PullRequestsService {
   async updateReviewStatus(pullRequest: PullRequestDocument, userId: string, status: string) {
     try {
       // check if user is a reviewer for the pull request
-      const reviewer = pullRequest.reviewers.find((reviewer) => reviewer.user === userId);
-      const isMerger = pullRequest.merger === userId;
+      const reviewer = pullRequest.reviewers.find((reviewer) => reviewer.user.id === userId);
+      const isMerger = pullRequest.merger.id === userId;
       let updatedPullRequest: PullRequest = null;
 
       if (!reviewer && !isMerger) {
@@ -107,7 +98,7 @@ export class PullRequestsService {
         updatedPullRequest = await this.pullRequestModel.findOneAndUpdate(
           { _id: pullRequest._id },
           { $set: { 'reviewers.$[reviewer].status': status } },
-          { arrayFilters: [{ 'reviewer.user': userId }], new: true, lean: true },
+          { arrayFilters: [{ 'reviewer.user.id': userId }], new: true, lean: true },
         );
       } else if (isMerger) {
         updatedPullRequest = await this.pullRequestModel.findOneAndUpdate(

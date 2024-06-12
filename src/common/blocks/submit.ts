@@ -413,13 +413,13 @@ export const NewSubmissionBlock = (pullRequest: PullRequest, isUpdate: boolean =
   return [
     {
       color: getAttachmentColor(pullRequest.status),
-      fallback: `<@${pullRequest.author}> submitted a pull request  :rocket:`,
+      fallback: `<@${pullRequest.author.id}> submitted a pull request  :rocket:`,
       blocks: [
         {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `<@${pullRequest.author}> submitted a pull request  :rocket:\n*<${pullRequest.link}|${_capitalizeString(pullRequest.type)} - ${_capitalizeString(pullRequest.title)}>*`,
+            text: `<@${pullRequest.author.id}> submitted a pull request  :rocket:\n*<${pullRequest.link}|${_capitalizeString(pullRequest.type)} - ${_capitalizeString(pullRequest.title)}>*`,
           },
           accessory,
         },
@@ -428,27 +428,27 @@ export const NewSubmissionBlock = (pullRequest: PullRequest, isUpdate: boolean =
           fields: [
             {
               type: 'mrkdwn',
-              text: `*Project*\n${pullRequest.project}`,
+              text: `*Project:*\n${pullRequest.project}`,
             },
             {
               type: 'mrkdwn',
-              text: `*Type*\n${FancyPrType[pullRequest.type]}`,
+              text: `*Type:*\n${FancyPrType[pullRequest.type]}`,
             },
             {
               type: 'mrkdwn',
-              text: `*Priority*\n${_capitalizeString(pullRequest.priority)}`,
+              text: `*Priority:*\n${_capitalizeString(pullRequest.priority)}`,
             },
             {
               type: 'mrkdwn',
-              text: `*Status*\n\`${_capitalizeString(pullRequest.status)}\``,
+              text: `*Status:*\n\`${_capitalizeString(pullRequest.status)}\``,
             },
             {
               type: 'mrkdwn',
-              text: `*Ticket*\n<${pullRequest.ticket}|${getTicketIdFromLink(pullRequest.ticket)}>`,
+              text: `*Ticket:*\n<${pullRequest.ticket}|${getTicketIdFromLink(pullRequest.ticket)}>`,
             },
             {
               type: 'mrkdwn',
-              text: `*Reviewers*\n${formattedReviewers}`,
+              text: `*Reviewers:*\n${formattedReviewers}`,
             },
           ],
         },

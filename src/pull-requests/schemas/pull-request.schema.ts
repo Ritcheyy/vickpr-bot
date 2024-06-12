@@ -1,8 +1,34 @@
 import { HydratedDocument } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { ReviewerType } from '@/common/types';
 
 export type PullRequestDocument = HydratedDocument<PullRequest>;
+
+@Schema()
+class User {
+  @Prop({ required: true })
+  id: string;
+
+  @Prop({ required: true })
+  name: string;
+
+  @Prop({ required: true })
+  display_name: string;
+}
+
+@Schema()
+class Reviewer {
+  @Prop({ required: true, _id: false })
+  user: User;
+
+  @Prop({ required: true })
+  status: string;
+}
+
+@Schema()
+class Message {
+  @Prop({ required: true })
+  timestamp: string;
+}
 
 @Schema()
 export class PullRequest {
@@ -27,19 +53,17 @@ export class PullRequest {
   @Prop({ required: true })
   ticket: string;
 
-  @Prop({ required: true })
-  merger: string;
+  @Prop({ required: true, _id: false })
+  merger: User;
 
-  @Prop({ required: true })
-  author: string;
+  @Prop({ required: true, _id: false })
+  author: User;
 
-  @Prop({ type: [Object], required: true })
-  reviewers: ReviewerType[];
+  @Prop({ type: [Reviewer], required: true, _id: false })
+  reviewers: Reviewer[];
 
-  @Prop({ type: Object, default: null })
-  message?: {
-    timestamp: string;
-  };
+  @Prop({ type: Message, default: null, _id: false })
+  message?: Message;
 }
 
 export const PullRequestSchema = SchemaFactory.createForClass(PullRequest);

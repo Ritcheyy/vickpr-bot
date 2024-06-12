@@ -1,6 +1,6 @@
+import { PullRequestStatus } from '@/common/constants';
 import { ReviewerType } from './types';
 import { mapEmojiToStatus } from './utils';
-import { PullRequestStatus } from '@/common/constants';
 
 export const _extractBlockFormValues = (submittedValues: any) => {
   const structuredValues: any = {};
@@ -40,7 +40,7 @@ export const getReviewers = (reviewers: ReviewerType[]) => {
     return 'No reviewers';
   }
 
-  return reviewers.map((reviewer) => `<@${reviewer.user}>`).join(', ');
+  return reviewers.map((reviewer) => `<@${reviewer.user.id}>`).join(', ');
 };
 
 /*
@@ -52,7 +52,9 @@ export const getReviewersWithStatusEmoji = (reviewers: ReviewerType[]) => {
     return 'No reviewers';
   }
 
-  return reviewers.map((reviewer) => `<@${reviewer.user}>${' ' + mapEmojiToStatus(reviewer.status)}`).join(', ');
+  return reviewers
+    .map((reviewer) => `<@${reviewer.user.id}>${' ' + mapEmojiToStatus(reviewer.status as PullRequestStatus)}`)
+    .join(', ');
 };
 
 /*
@@ -67,6 +69,27 @@ export const getAttachmentColor = (status: string) => {
       return '#bb3638';
     default:
       return '#d4ad3b';
+  }
+};
+
+/*
+ * fetch user information
+ * @return object
+ */
+export const getUserInfo = async (client: any, userId: string) => {
+  try {
+    const userInfoResponse = await client.users.info({ user: userId });
+    if (userInfoResponse.ok) {
+      return {
+        id: userInfoResponse.user.id,
+        name: userInfoResponse.user.real_name,
+        display_name: userInfoResponse.user.profile.display_name,
+      };
+    } else {
+      throw userInfoResponse.error;
+    }
+  } catch (error) {
+    throw error;
   }
 };
 

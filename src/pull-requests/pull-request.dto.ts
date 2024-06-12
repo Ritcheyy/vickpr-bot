@@ -1,5 +1,6 @@
 import { IsArray, IsEnum, IsNotEmpty, IsString, IsUrl } from 'class-validator';
 import { PullRequestStatus } from '@/common/constants';
+import { ReviewerType, User } from '@/common/types';
 
 enum PullRequestPriorityType {
   HIGH = 'high',
@@ -34,13 +35,15 @@ export class CreatePullRequestDto {
   @IsNotEmpty()
   ticket: string;
 
-  @IsString()
   @IsNotEmpty()
-  merger: string;
+  merger: User;
+
+  @IsNotEmpty()
+  author: User;
 
   @IsArray()
   @IsNotEmpty()
-  reviewers: string[] | Record<string, any>[];
+  reviewers: ReviewerType[];
 }
 
 export class UpdatePullRequestDto {

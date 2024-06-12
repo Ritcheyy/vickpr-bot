@@ -6,10 +6,11 @@ import { App, ExpressReceiver } from '@slack/bolt';
 import { StatusUpdateNotificationBlock } from '@/common/blocks/notifications';
 import { NewSubmissionBlock, SubmitPullRequestBlock, SubmitSuccessBlock } from '@/common/blocks/submit';
 import { NotificationDispatchTypes, PullRequestStatus, ReviewStatusResponse } from '@/common/constants';
-import { _extractBlockFormValues } from '@/common/helpers';
+import { _extractBlockFormValues, getUserInfo } from '@/common/helpers';
 import { EventTypes, SubmitPullRequestType } from '@/common/types';
 import { PullRequestsService } from '@/pull-requests/pull-requests.service';
 import Config from '../../config';
+import { CreatePullRequestDto } from '@/pull-requests/pull-request.dto';
 
 @Injectable()
 export class SlackService {
@@ -79,16 +80,33 @@ export class SlackService {
   }
 
   async handleSubmitPullRequest({ ack, view, client, body }) {
-    try {
-      // Extract the values from the submitted form
-      const { structuredValues, blockIdMapping } = _extractBlockFormValues(view.state.values);
-      structuredValues.author = body.user.id;
+    // Extract the values from the submitted form
+    const { structuredValues, blockIdMapping } = _extractBlockFormValues(view.state.values);
+    structuredValues.author = body.user.id;
 
-      const newPullRequest = await this.pullRequestsService.create(
-        structuredValues as SubmitPullRequestType,
-        blockIdMapping,
-        ack,
+    try {
+      await this.pullRequestsService.validatePullRequestData(structuredValues);
+      await ack();
+
+      // fetch users' information
+      const _authorPromise = getUserInfo(client, structuredValues.author);
+      const _mergerPromise = getUserInfo(client, structuredValues.merger);
+      const _reviewersPromises = Promise.all(
+        structuredValues.reviewers.map((reviewerId: string) => getUserInfo(client, reviewerId)),
       );
+
+      const [reviewers, merger, author] = await Promise.all([_reviewersPromises, _mergerPromise, _authorPromise]);
+
+      structuredValues.author = author;
+      structuredValues.merger = merger;
+      structuredValues.reviewers = reviewers.map((reviewer) => ({
+        // Transform reviewers data, add review status - pending
+        user: reviewer,
+        status: PullRequestStatus.PENDING,
+      }));
+
+      // Create pull request
+      const newPullRequest = await this.pullRequestsService.create(structuredValues as SubmitPullRequestType);
 
       // Submit pull request to PR Channel
       const messageResponse = await client.chat.postMessage({
@@ -111,18 +129,27 @@ export class SlackService {
       // Send success message
       // Todo(not sure if this is necessary): Get if user submits through bot user dm or channel
       await client.chat.postMessage({
-        channel: newPullRequest.author,
+        channel: newPullRequest.author.id,
         text: 'Your pull request has been successfully submitted!  :tada:',
         blocks: SubmitSuccessBlock(structuredValues.title, structuredValues.type, permalink),
       });
       return;
     } catch (errors) {
       console.log(errors);
-      if (!(errors instanceof Array && errors[0] instanceof ValidationError)) {
+      if (errors instanceof Array && errors[0] instanceof ValidationError) {
+        const formattedError = errors.reduce(
+          (acc, error) => ({ ...acc, [blockIdMapping[error.property]]: Object.values(error.constraints)[0] }),
+          {},
+        );
+        ack({
+          response_action: 'errors',
+          errors: formattedError,
+        });
+      } else {
         ack({
           response_action: 'errors',
           errors: {
-            title: 'There was an error with your submission. Please try again later.',
+            [blockIdMapping['merger']]: 'There was an error with your submission. Please try again later.',
           },
         });
       }
@@ -164,8 +191,8 @@ export class SlackService {
       // Send notifications to stakeholders depending on review status
       const stakeholders = {
         reviewer: user.id,
-        author: updatedPullRequest.author,
-        merger: updatedPullRequest.merger,
+        author: updatedPullRequest.author.id,
+        merger: updatedPullRequest.merger.id,
       };
       await this.handleNotificationDispatch({ notificationDispatchType, stakeholders, body, client });
     }
@@ -233,22 +260,48 @@ export class SlackService {
     await ack();
 
     const TEST_DATA = {
-      title: 'fsgd',
+      title: 'Test PR',
       link: 'https://www.google.com/',
       type: 'feature',
       status: 'pending',
       project: 'api',
       priority: 'medium',
       ticket: 'https://www.google.com/',
-      merger: 'U03DB6TJZ55',
-      author: 'U03DRM6SHA7',
+      merger: {
+        id: 'U03DB6TJZ55',
+        name: 'test merger',
+        display_name: 'testMerger',
+      },
+      author: {
+        id: 'U03DRM6SHA7',
+        name: 'test author',
+        display_name: 'testAuthor',
+      },
       reviewers: [
         {
-          user: 'U06CZSMLP2T',
-          status: 'pending' as PullRequestStatus,
+          user: {
+            id: 'U06CZSMLP2T',
+            name: 'test author',
+            display_name: 'testAuthor',
+          },
+          status: 'pending',
+        },
+        {
+          user: {
+            id: 'U06CZSMLP2T',
+            name: 'test author',
+            display_name: 'testAuthor',
+          },
+          status: 'pending',
         },
       ],
     };
+
+    // const authorPromise = getUserInfo(client, TEST_DATA.author.id);
+    // const mergerPromise = getUserInfo(client, TEST_DATA.merger.id);
+    // const reviewersPromises = Promise.all(TEST_DATA.reviewers.map((reviewer) => getUserInfo(client, reviewer.user.id)));
+
+    // const [reviewers, merger, author] = await Promise.all([reviewersPromises, mergerPromise, authorPromise]);
 
     // await client.chat.postEphemeral({
     //   channel: Config.AUTHORIZED_CHANNEL_ID,
