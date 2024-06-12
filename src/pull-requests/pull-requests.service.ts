@@ -100,7 +100,9 @@ export class PullRequestsService {
           { $set: { 'reviewers.$[reviewer].status': status } },
           { arrayFilters: [{ 'reviewer.user.id': userId }], new: true, lean: true },
         );
-      } else if (isMerger) {
+      }
+
+      if (isMerger) {
         updatedPullRequest = await this.pullRequestModel.findOneAndUpdate(
           { _id: pullRequest._id },
           { $set: { status: status } },

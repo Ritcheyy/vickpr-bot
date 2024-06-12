@@ -10,7 +10,6 @@ import { _extractBlockFormValues, getUserInfo } from '@/common/helpers';
 import { EventTypes, SubmitPullRequestType } from '@/common/types';
 import { PullRequestsService } from '@/pull-requests/pull-requests.service';
 import Config from '../../config';
-import { CreatePullRequestDto } from '@/pull-requests/pull-request.dto';
 
 @Injectable()
 export class SlackService {
@@ -233,16 +232,17 @@ export class SlackService {
 
       switch (notificationDispatchType) {
         case NotificationDispatchTypes.ALL_APPROVED:
-          notificationText = `Hey <@${stakeholders.merger}> :wave:\n\nAll reviewers have approved this pull request. Please merge it if it looks good to you.\n\nThank you Boss! :saluting_face:`;
+          notificationText = `<@${stakeholders.merger}>\n\n>All reviewers have approved this pull request. \n>Please merge it if it looks good to you. Thanks Boss! :saluting_face:`;
           break;
         case NotificationDispatchTypes.NEW_COMMENT:
-          notificationText = `Hey <@${stakeholders.author}> :wave:\n\n<@${stakeholders.reviewer}> left a comment on your pull request. Please attend to it.\n\nThank you!`;
+          notificationText = `<@${stakeholders.author}>\n\n><@${stakeholders.reviewer}> has left a comment on your pull request. \n>Please attend to it. Thanks!`;
           break;
         case NotificationDispatchTypes.DECLINED:
-          notificationText = `Hey <@${stakeholders.author}> :wave:\n\nUnfortunately, your pull request has been declined :pensive:. Please review the feedback and make the necessary changes.\n\nThank you!`;
+          notificationText = `<@${stakeholders.author}>\n\n>Unfortunately, your pull request has been declined. :pensive: \n>Please review the feedback and make the necessary changes. Thanks!`;
           break;
         case NotificationDispatchTypes.MERGED:
-          notificationText = `Hey <@${stakeholders.author}> :wave:\n\nYour pull request has been merged. :rocket:\n\nThank you!`;
+          notificationText = `<@${stakeholders.author}>\n\n>Your pull request has been merged. :rocket:`;
+          // todo: Add update jira ticket
           break;
       }
 

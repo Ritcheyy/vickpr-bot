@@ -7,8 +7,5 @@ export const StatusUpdateNotificationBlock = (text: string) => {
         text,
       },
     },
-    {
-      type: 'divider',
-    },
   ];
 };
