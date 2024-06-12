@@ -42,8 +42,9 @@ export class SlackService {
     // View Events
     this.boltApp.view(EventTypes.MODAL_SUBMIT, this.handleSubmitPullRequest.bind(this));
 
-    // Action Events
+    // Button action Events
     this.boltApp.action(EventTypes.VIEW_SUBMISSION, ({ ack }) => ack());
+    this.boltApp.action(EventTypes.VIEW_TICKET, ({ ack }) => ack());
     this.boltApp.action(EventTypes.UPDATE_REVIEW_STATUS, this.handleReviewStatusUpdate.bind(this));
   }
 
@@ -193,7 +194,13 @@ export class SlackService {
         author: updatedPullRequest.author.id,
         merger: updatedPullRequest.merger.id,
       };
-      await this.handleNotificationDispatch({ notificationDispatchType, stakeholders, body, client });
+      await this.handleNotificationDispatch({
+        notificationDispatchType,
+        stakeholders,
+        body,
+        client,
+        ticket: updatedPullRequest.ticket,
+      });
     }
   }
 
@@ -226,7 +233,7 @@ export class SlackService {
     return true;
   }
 
-  async handleNotificationDispatch({ notificationDispatchType, stakeholders, body, client }) {
+  async handleNotificationDispatch({ notificationDispatchType, stakeholders, body, client, ticket }) {
     if (notificationDispatchType !== NotificationDispatchTypes.NONE) {
       let notificationText: string = null;
 
@@ -241,8 +248,7 @@ export class SlackService {
           notificationText = `<@${stakeholders.author}>\n\n>Unfortunately, your pull request has been declined. :pensive: \n>Please review the feedback and make the necessary changes. Thanks!`;
           break;
         case NotificationDispatchTypes.MERGED:
-          notificationText = `<@${stakeholders.author}>\n\n>Your pull request has been merged. :rocket:`;
-          // todo: Add update jira ticket
+          notificationText = `<@${stakeholders.author}>\n\n>Your pull request has been merged. :rocket: \n>Don't forget to update the ticket status. Thanks!`;
           break;
       }
 
@@ -250,7 +256,10 @@ export class SlackService {
         channel: Config.AUTHORIZED_CHANNEL_ID,
         thread_ts: body.message.ts,
         text: notificationText,
-        blocks: StatusUpdateNotificationBlock(notificationText),
+        blocks: StatusUpdateNotificationBlock(
+          notificationText,
+          notificationDispatchType === NotificationDispatchTypes.MERGED ? ticket : undefined,
+        ),
       });
       return;
     }

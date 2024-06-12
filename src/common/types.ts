@@ -25,6 +25,7 @@ export enum EventTypes {
   MODAL_SUBMIT = 'submit-pr-modal',
   VIEW_SUBMISSION = 'view_submission',
   UPDATE_REVIEW_STATUS = 'update_review_status',
+  VIEW_TICKET = 'view_ticket',
 }
 
 export type SubmitPullRequestType = {

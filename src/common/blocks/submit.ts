@@ -37,7 +37,7 @@ export const SubmitPullRequestBlock = (userId: string = '') => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `:wave:  Hey <@${userId}>,\n\nFill in the form below to submit a PR.`,
+          text: `Hey <@${userId}> :wave:\n\nFill in the form below to submit a PR.`,
           verbatim: true,
         },
       },
