@@ -23,7 +23,7 @@ export const SubmitPullRequestBlock = (userId: string = '') => {
 
   return {
     type: 'modal',
-    callback_id: 'submit-pr-modal',
+    callback_id: 'submit_pr_modal',
     title: {
       type: 'plain_text',
       text: 'VickPR Bot',
