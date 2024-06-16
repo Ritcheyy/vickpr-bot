@@ -1,19 +1,17 @@
+import * as moment from 'moment';
 import { isValidObjectId, Model } from 'mongoose';
 import { plainToInstance } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import { InjectModel } from '@nestjs/mongoose';
 import { Injectable, UnprocessableEntityException } from '@nestjs/common';
-import {
-  NotificationDispatchTypes,
-  PendingPullRequestStatus,
-  PullRequestStatus,
-  ReviewStatusResponse,
-} from '@/common/constants';
+import { NotificationDispatchTypes, PullRequestStatus, ReviewStatusResponse } from '@/common/constants';
 import { CreatePullRequestDto, UpdatePullRequestDto } from './pull-request.dto';
 import { PullRequest, PullRequestDocument } from './schemas/pull-request.schema';
 
 @Injectable()
 export class PullRequestsService {
+  private DATE_LIMIT = 7; // todo: move to config
+
   constructor(
     @InjectModel(PullRequest.name)
     private pullRequestModel: Model<PullRequest>,
@@ -49,12 +47,6 @@ export class PullRequestsService {
 
   async findByMessageTimestamp(messageTimestamp: string) {
     return this.pullRequestModel.findOne({ message: { timestamp: messageTimestamp } });
-  }
-
-  async getAllPending() {
-    const pendingStatuses = Object.values(PendingPullRequestStatus);
-
-    return this.pullRequestModel.find({ status: { $in: pendingStatuses } }).sort({ createdAt: -1 });
   }
 
   async update(id: string, body: UpdatePullRequestDto) {
@@ -127,6 +119,16 @@ export class PullRequestsService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async getAllPending() {
+    const prClosedStatuses = [PullRequestStatus.MERGED, PullRequestStatus.DECLINED];
+    const formattedDateLimit = moment().subtract(this.DATE_LIMIT, 'days').format();
+
+    // get pending pull requests that are not merged/declined and were created within the last DATE_LIMIT days
+    return this.pullRequestModel
+      .find({ status: { $nin: prClosedStatuses }, createdAt: { $gte: formattedDateLimit } })
+      .sort({ createdAt: -1 });
   }
 
   getNotificationDispatchType(status: string, hasTotalApprovals: boolean = false) {

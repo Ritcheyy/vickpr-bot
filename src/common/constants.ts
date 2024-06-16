@@ -1,11 +1,16 @@
 export enum PullRequestStatus {
   PENDING = 'pending',
-  APPROVED = 'approved',
   COMMENTED = 'commented',
   REVIEWING = 'reviewing',
-  REJECTED = 'rejected',
-  DECLINED = 'declined',
+  APPROVED = 'approved',
   MERGED = 'merged',
+  DECLINED = 'declined',
+}
+
+export enum PendingPullRequestStatus {
+  PENDING = 'pending',
+  COMMENTED = 'commented',
+  REVIEWING = 'reviewing',
 }
 
 export enum ReviewStatusResponse {
@@ -14,19 +19,18 @@ export enum ReviewStatusResponse {
   SUCCESS = 'SUCCESS',
 }
 
-export enum PendingPullRequestStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  COMMENTED = 'commented',
-  REVIEWING = 'reviewing',
-}
-
 export enum NotificationDispatchTypes {
   ALL_APPROVED = 'ALL_APPROVED',
   NEW_COMMENT = 'NEW_COMMENT',
   DECLINED = 'DECLINED',
   MERGED = 'MERGED',
   NONE = 'NONE',
+}
+
+export enum ReminderDispatchTypes {
+  MERGER = 'MERGER',
+  REVIEWERS = 'REVIEWERS',
+  AUTHOR = 'AUTHOR',
 }
 
 export enum FancyPrType {

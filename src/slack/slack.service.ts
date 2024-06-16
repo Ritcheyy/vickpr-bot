@@ -1,11 +1,17 @@
 // noinspection TypeScriptValidateJSTypes
 
+import * as moment from 'moment';
 import { ValidationError } from 'class-validator';
 import { Injectable } from '@nestjs/common';
 import { App, ExpressReceiver } from '@slack/bolt';
 import { StatusUpdateNotificationBlock } from '@/common/blocks/notifications';
 import { NewSubmissionBlock, SubmitPullRequestBlock, SubmitSuccessBlock } from '@/common/blocks/submit';
-import { NotificationDispatchTypes, PullRequestStatus, ReviewStatusResponse } from '@/common/constants';
+import {
+  NotificationDispatchTypes,
+  ReminderDispatchTypes,
+  PullRequestStatus,
+  ReviewStatusResponse,
+} from '@/common/constants';
 import { _extractBlockFormValues, getUserInfo } from '@/common/helpers';
 import { EventTypes, SubmitPullRequestType } from '@/common/types';
 import { PullRequestsService } from '@/pull-requests/pull-requests.service';
@@ -167,6 +173,7 @@ export class SlackService {
     if (!pullRequest) {
       await client.chat.postEphemeral({
         channel: Config.AUTHORIZED_CHANNEL_ID,
+        thread_ts: message.ts,
         user: user.id,
         text: "Sorry, I can't find the pull request submission. Please try again later.",
       });
@@ -263,6 +270,73 @@ export class SlackService {
       });
       return;
     }
+  }
+
+  // cron job handler
+  async triggerReviewReminders() {
+    try {
+      console.log(`\n\nTriggered: Review Reminders - ${moment().format()}\n\n`);
+
+      const pendingPullRequests = await this.pullRequestsService.getAllPending();
+      if (!pendingPullRequests) {
+        return;
+      }
+
+      const reviewClosedStatuses: string[] = [PullRequestStatus.MERGED, PullRequestStatus.APPROVED];
+
+      for (const pullRequest of pendingPullRequests) {
+        const pendingReviewers = pullRequest.reviewers.filter(
+          (reviewer) => !reviewClosedStatuses.includes(reviewer.status),
+        );
+
+        const hasTotalApprovals = !pendingReviewers.length;
+        let stakeholdersId: string[];
+        let reminderType: string;
+
+        if (hasTotalApprovals) {
+          // send notification to the merger instead
+          stakeholdersId = [pullRequest.merger.id];
+          reminderType = ReminderDispatchTypes.MERGER;
+        } else {
+          stakeholdersId = pendingReviewers.map((reviewer) => reviewer.user.id);
+          reminderType = ReminderDispatchTypes.REVIEWERS;
+        }
+
+        // noinspection ES6MissingAwait, Todo: implement queues
+        this.handleReminderDispatch({
+          stakeholdersId,
+          reminderType,
+          messageTimestamp: pullRequest.message?.timestamp,
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async handleReminderDispatch({ stakeholdersId, reminderType, messageTimestamp }) {
+    let notificationText: string = null;
+
+    switch (reminderType) {
+      case ReminderDispatchTypes.MERGER:
+        notificationText = `<@${stakeholdersId[0]}>\n\n>This is a soft reminder to review/merge the above pull request, as all reviewers have approved. Thanks!  :pray:`;
+        break;
+      case ReminderDispatchTypes.REVIEWERS:
+        const reviewers = stakeholdersId.map((id) => `<@${id}>`).join(', ');
+        notificationText = `${reviewers}\n\n>This is a soft reminder to review and update the above pull request. Thanks!  :pray:`;
+        break;
+    }
+
+    // console.log(notificationText, stakeholdersId, messageTimestamp);
+    // return;
+
+    await this.boltApp.client.chat.postMessage({
+      channel: Config.AUTHORIZED_CHANNEL_ID,
+      thread_ts: messageTimestamp,
+      text: notificationText,
+      blocks: StatusUpdateNotificationBlock(notificationText),
+    });
+    return;
   }
 
   async testAction({ ack, client }) {
