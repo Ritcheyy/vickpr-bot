@@ -1,28 +1,29 @@
 import { Controller } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { SlackService } from './slack.service';
+
+// Todo: move to config
+const MONDAY_TO_FRIDAY_AT_11AM = '0 0 11 * * 1-5';
+const MONDAY_TO_FRIDAY_AT_4_30PM = '0 30 16 * * 1-5';
 
 @Controller('slack')
 export class SlackController {
   constructor(private readonly slackService: SlackService) {}
 
-  // @Post('events')
-  // handleSlackEvents(@Body() req: SlackEventResponse) {
-  //   console.log('here')
-  //   // this.slackService.handleSlackEvent(req);
-  // }
-
-  // For verifying Request URL
-  // @Post('events')
-  // handleUrlVerification(@Body() req: VerificationDto) {
-  //   console.log(req);
-  //   return req.challenge;
-  // }
-
-  // @Cron(CronExpression.EVERY_10_SECONDS)
-  // @Cron(CronExpression.EVERY_MINUTE)
-  // @Cron(CronExpression.EVERY_3_HOURS)
-  handleReminderCron() {
+  @Cron(MONDAY_TO_FRIDAY_AT_11AM)
+  handleMorningReminderCron() {
     return this.slackService.triggerReviewReminders();
   }
+
+  @Cron(MONDAY_TO_FRIDAY_AT_4_30PM)
+  handleAfternoonReminderCron() {
+    return this.slackService.triggerReviewReminders();
+  }
+
+  // For verifying the Request URL
+  /*  @Post('events')
+  handleUrlVerification(@Body() req: VerificationDto) {
+    console.log(req);
+    return req.challenge;
+  }*/
 }

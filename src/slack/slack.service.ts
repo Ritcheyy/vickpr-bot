@@ -302,7 +302,7 @@ export class SlackService {
           reminderType = ReminderDispatchTypes.REVIEWERS;
         }
 
-        // noinspection ES6MissingAwait, Todo: implement queues
+        // noinspection ES6MissingAwait, Todo: implement queue
         this.handleReminderDispatch({
           stakeholdersId,
           reminderType,
