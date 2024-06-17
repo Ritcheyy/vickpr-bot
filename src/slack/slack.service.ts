@@ -4,7 +4,7 @@ import * as moment from 'moment';
 import { ValidationError } from 'class-validator';
 import { Injectable } from '@nestjs/common';
 import { App, ExpressReceiver } from '@slack/bolt';
-import { StatusUpdateNotificationBlock } from '@/common/blocks/notifications';
+import { HelpBlock, StatusUpdateNotificationBlock } from '@/common/blocks/notifications';
 import { NewSubmissionBlock, SubmitPullRequestBlock, SubmitSuccessBlock } from '@/common/blocks/submit';
 import {
   NotificationDispatchTypes,
@@ -33,13 +33,10 @@ export class SlackService {
       receiver: this.receiver,
     });
 
-    /*this.boltApp.client.chat.postMessage({
-      channel: 'C075HAJLHPT',
-      text: '⚡️ Bot App Started',
-    });*/
+    console.log('⚡️ Bot App Started');
 
-    // Raw Events
-    // Todo: Any random direct message should respond with the help block
+    // Raw Events - help events
+    this.boltApp.message(this.handleAppMessage.bind(this));
     this.boltApp.event(EventTypes.APP_MENTION, this.handleAppMention.bind(this));
 
     // Command Events
@@ -60,14 +57,25 @@ export class SlackService {
 
   async handleAppMention({ event, say }) {
     try {
-      // Todo: improve generic response and add a block element
-      // Add button for "are you ready to submit a PR?"...
       await say({
-        text: `Hey there <@${event.user}>!`,
-        thread_ts: event.ts ?? undefined,
+        text: `Hello <@${event.user}> :sunglasses: I'm VickPR - your pull request management assistant`,
+        blocks: HelpBlock(event.user),
       });
     } catch (error) {
       console.log(error);
+    }
+  }
+
+  async handleAppMessage({ message, say }) {
+    if (message.channel_type === 'im') {
+      try {
+        await say({
+          text: `Hello <@${message.user}> :sunglasses: I'm VickPR - your pull request management assistant`,
+          blocks: HelpBlock(message.user),
+        });
+      } catch (error) {
+        console.log(error);
+      }
     }
   }
 
