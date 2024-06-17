@@ -242,29 +242,36 @@ export class SlackService {
 
   async handleNotificationDispatch({ notificationDispatchType, stakeholders, body, client, ticket }) {
     if (notificationDispatchType !== NotificationDispatchTypes.NONE) {
-      let notificationText: string = null;
+      const notification = {
+        text: '',
+        block: '',
+      };
 
       switch (notificationDispatchType) {
         case NotificationDispatchTypes.ALL_APPROVED:
-          notificationText = `<@${stakeholders.merger}>\n\n>All reviewers have approved this pull request. \n>Please merge it if it looks good to you. Thanks Boss! :saluting_face:`;
+          notification.text = `<@${stakeholders.merger}> All reviewers have approved this pull request. Please merge it if it looks good to you. Thanks Boss! :saluting_face:`;
+          notification.block = `<@${stakeholders.merger}>\n\n>All reviewers have approved this pull request. \n>Please merge it if it looks good to you. Thanks Boss! :saluting_face:`;
           break;
         case NotificationDispatchTypes.NEW_COMMENT:
-          notificationText = `<@${stakeholders.author}>\n\n><@${stakeholders.reviewer}> has left a comment on your pull request. \n>Please attend to it. Thanks!`;
+          notification.text = `<@${stakeholders.author}>, <@${stakeholders.reviewer}> has left a comment on your pull request. Please attend to it. Thanks!`;
+          notification.block = `<@${stakeholders.author}>\n\n><@${stakeholders.reviewer}> has left a comment on your pull request. \n>Please attend to it. Thanks!`;
           break;
         case NotificationDispatchTypes.DECLINED:
-          notificationText = `<@${stakeholders.author}>\n\n>Unfortunately, your pull request has been declined. :pensive: \n>Please review the feedback and make the necessary changes. Thanks!`;
+          notification.text = `<@${stakeholders.author}> Unfortunately, your pull request has been declined. :pensive: Please review the feedback and make the necessary changes. Thanks!`;
+          notification.block = `<@${stakeholders.author}>\n\n>Unfortunately, your pull request has been declined. :pensive: \n>Please review the feedback and make the necessary changes. Thanks!`;
           break;
         case NotificationDispatchTypes.MERGED:
-          notificationText = `<@${stakeholders.author}>\n\n>Your pull request has been merged. :rocket: \n>Don't forget to update the ticket status. Thanks!`;
+          notification.text = `<@${stakeholders.author}> Your pull request has been merged. :rocket: Don't forget to update the ticket status. Thanks!`;
+          notification.block = `<@${stakeholders.author}>\n\n>Your pull request has been merged. :rocket: \n>Don't forget to update the ticket status. Thanks!`;
           break;
       }
 
       await client.chat.postMessage({
         channel: Config.AUTHORIZED_CHANNEL_ID,
         thread_ts: body.message.ts,
-        text: notificationText,
+        text: notification.text,
         blocks: StatusUpdateNotificationBlock(
-          notificationText,
+          notification.block,
           notificationDispatchType === NotificationDispatchTypes.MERGED ? ticket : undefined,
         ),
       });
@@ -315,15 +322,20 @@ export class SlackService {
   }
 
   async handleReminderDispatch({ stakeholdersId, reminderType, messageTimestamp }) {
-    let notificationText: string = null;
+    const notification = {
+      text: '',
+      block: '',
+    };
 
     switch (reminderType) {
       case ReminderDispatchTypes.MERGER:
-        notificationText = `<@${stakeholdersId[0]}>\n\n>This is a soft reminder to review/merge the above pull request, as all reviewers have approved. Thanks!  :pray:`;
+        notification.text = `<@${stakeholdersId[0]}> This is a soft reminder to review/merge the above pull request, as all reviewers have approved. Thanks!  :pray:`;
+        notification.block = `<@${stakeholdersId[0]}>\n\n>This is a soft reminder to review/merge the above pull request, as all reviewers have approved. Thanks!  :pray:`;
         break;
       case ReminderDispatchTypes.REVIEWERS:
         const reviewers = stakeholdersId.map((id) => `<@${id}>`).join(', ');
-        notificationText = `${reviewers}\n\n>This is a soft reminder to review and update the above pull request. Thanks!  :pray:`;
+        notification.text = `${reviewers} This is a soft reminder to review and update the above pull request. Thanks!  :pray:`;
+        notification.block = `${reviewers}\n\n>This is a soft reminder to review and update the above pull request. Thanks!  :pray:`;
         break;
     }
 
@@ -333,8 +345,8 @@ export class SlackService {
     await this.boltApp.client.chat.postMessage({
       channel: Config.AUTHORIZED_CHANNEL_ID,
       thread_ts: messageTimestamp,
-      text: notificationText,
-      blocks: StatusUpdateNotificationBlock(notificationText),
+      text: notification.text,
+      blocks: StatusUpdateNotificationBlock(notification.block),
     });
     return;
   }

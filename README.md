@@ -1,6 +1,6 @@
 ## VickPR Bot
 
-VickPR Bot is a Semi-Automated Slack app designed to streamline pull request management within our development team. Its primary objectives include:
+VickPR Bot is a Semi-Automated Slack app designed to streamline pull request management within our development team.
 
 ### Tools/Technologies
 
