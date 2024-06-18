@@ -11,7 +11,7 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -22,8 +22,14 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ritcheyy/vick-pr-bot:latest
+          tags: ritcheyy/vickpr_bot:latest
+          secrets: |
+            DB_CONNECTION_STRING=${{ secrets.DB_CONNECTION_STRING }}
+            SLACK_SIGNING_SECRET=${{ secrets.SLACK_SIGNING_SECRET }}
+            SLACK_BOT_TOKEN=${{ secrets.SLACK_BOT_TOKEN }}
+            AUTHORIZED_CHANNEL_ID=${{ secrets.AUTHORIZED_CHANNEL_ID }}
+            APP_PROJECTS=${{ secrets.APP_PROJECTS }}
