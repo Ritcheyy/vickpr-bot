@@ -15,21 +15,21 @@ import {
 import { _extractBlockFormValues, getUserInfo } from '@/common/helpers';
 import { EventTypes, SubmitPullRequestType } from '@/common/types';
 import { PullRequestsService } from '@/pull-requests/pull-requests.service';
-import Config from '../../config';
 
 @Injectable()
 export class SlackService {
   private boltApp: App;
   private readonly receiver: ExpressReceiver;
+  private readonly CHANNEL_ID = process.env.AUTHORIZED_CHANNEL_ID;
 
   constructor(private readonly pullRequestsService: PullRequestsService) {
     this.receiver = new ExpressReceiver({
-      signingSecret: Config.SLACK_SIGNING_SECRET,
+      signingSecret: process.env.SLACK_SIGNING_SECRET,
       endpoints: '/',
     });
 
     this.boltApp = new App({
-      token: Config.SLACK_BOT_TOKEN,
+      token: process.env.SLACK_BOT_TOKEN,
       receiver: this.receiver,
     });
 
@@ -124,7 +124,7 @@ export class SlackService {
 
       // Submit pull request to PR Channel
       const messageResponse = await client.chat.postMessage({
-        channel: Config.AUTHORIZED_CHANNEL_ID,
+        channel: this.CHANNEL_ID,
         attachments: NewSubmissionBlock(newPullRequest),
       });
 
@@ -136,7 +136,7 @@ export class SlackService {
 
       // Retrieve the message permalink
       const { permalink } = await client.chat.getPermalink({
-        channel: Config.AUTHORIZED_CHANNEL_ID,
+        channel: this.CHANNEL_ID,
         message_ts: messageResponse.ts,
       });
 
@@ -180,7 +180,7 @@ export class SlackService {
 
     if (!pullRequest) {
       await client.chat.postEphemeral({
-        channel: Config.AUTHORIZED_CHANNEL_ID,
+        channel: this.CHANNEL_ID,
         thread_ts: message.ts,
         user: user.id,
         text: "Sorry, I can't find the pull request submission. Please try again later.",
@@ -224,7 +224,7 @@ export class SlackService {
 
     if (reviewStatusRes === ReviewStatusResponse.NOT_A_REVIEWER) {
       await client.chat.postEphemeral({
-        channel: Config.AUTHORIZED_CHANNEL_ID,
+        channel: this.CHANNEL_ID,
         user: user.id,
         text: 'I am unable perform this action, you are not listed as a reviewer for this pull request.',
       });
@@ -233,7 +233,7 @@ export class SlackService {
 
     if (reviewStatusRes === ReviewStatusResponse.NOT_THE_MERGER) {
       await client.chat.postEphemeral({
-        channel: Config.AUTHORIZED_CHANNEL_ID,
+        channel: this.CHANNEL_ID,
         user: user.id,
         text: 'I am unable perform this action, you are not listed as the merge manager for this pull request.',
       });
@@ -241,7 +241,7 @@ export class SlackService {
     }
 
     await client.chat.update({
-      channel: Config.AUTHORIZED_CHANNEL_ID,
+      channel: this.CHANNEL_ID,
       ts: message.ts,
       attachments: NewSubmissionBlock(updatedPullRequest, true),
     });
@@ -275,7 +275,7 @@ export class SlackService {
       }
 
       await client.chat.postMessage({
-        channel: Config.AUTHORIZED_CHANNEL_ID,
+        channel: this.CHANNEL_ID,
         thread_ts: body.message.ts,
         text: notification.text,
         blocks: StatusUpdateNotificationBlock(
@@ -351,7 +351,7 @@ export class SlackService {
     // return;
 
     await this.boltApp.client.chat.postMessage({
-      channel: Config.AUTHORIZED_CHANNEL_ID,
+      channel: this.CHANNEL_ID,
       thread_ts: messageTimestamp,
       text: notification.text,
       blocks: StatusUpdateNotificationBlock(notification.block),
@@ -407,13 +407,13 @@ export class SlackService {
     // const [reviewers, merger, author] = await Promise.all([reviewersPromises, mergerPromise, authorPromise]);
 
     // await client.chat.postEphemeral({
-    //   channel: Config.AUTHORIZED_CHANNEL_ID,
+    //   channel: this.CHANNEL_ID,
     //   user: body.user.id,
     //   text: 'There was an error with your submission. Please try again later.',
     // });
 
     await client.chat.postMessage({
-      channel: Config.AUTHORIZED_CHANNEL_ID,
+      channel: this.CHANNEL_ID,
       attachments: NewSubmissionBlock(TEST_DATA),
     });
   }

@@ -398,4 +398,3 @@ Temporary Items
 dist
 .webpack
 .serverless/**/*.zip
-config/index.ts

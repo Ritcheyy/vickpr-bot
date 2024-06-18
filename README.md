@@ -20,7 +20,7 @@ $ git clone [repo-link] vickpr-bot
 
 ```bash
 # copy config file
-$ cp config/index.example.ts config/index.ts
+$ cp .env.example .env
 ```
 
 ### Installation

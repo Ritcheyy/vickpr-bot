@@ -1,5 +1,4 @@
 import { PullRequest } from '@/pull-requests/schemas/pull-request.schema';
-import Config from '../../../config';
 import { FancyPrType, PullRequestStatus } from '../constants';
 import {
   _capitalizeString,
@@ -10,14 +9,15 @@ import {
 } from '../helpers';
 
 export const SubmitPullRequestBlock = (userId: string = '') => {
+  const projects = process.env.APP_PROJECTS?.split(',') || [];
   const projectOptions =
-    Config.APP_PROJECTS.map((project) => {
+    projects.map((project) => {
       return {
         text: {
           type: 'plain_text',
-          text: project,
+          text: project.trim(),
         },
-        value: project,
+        value: project.trim(),
       };
     }) || [];
 
