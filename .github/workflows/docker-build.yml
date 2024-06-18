@@ -2,14 +2,12 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ['master']
 
 jobs:
   docker-build:
-
     runs-on: ubuntu-latest
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up QEMU
@@ -27,9 +25,3 @@ jobs:
           context: .
           push: true
           tags: ritcheyy/vickpr_bot:latest
-          secrets: |
-            DB_CONNECTION_STRING=${{ secrets.DB_CONNECTION_STRING }}
-            SLACK_SIGNING_SECRET=${{ secrets.SLACK_SIGNING_SECRET }}
-            SLACK_BOT_TOKEN=${{ secrets.SLACK_BOT_TOKEN }}
-            AUTHORIZED_CHANNEL_ID=${{ secrets.AUTHORIZED_CHANNEL_ID }}
-            APP_PROJECTS=${{ secrets.APP_PROJECTS }}
