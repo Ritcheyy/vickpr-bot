@@ -41,6 +41,7 @@ export class SlackService {
 
     // Command Events
     this.boltApp.command(EventTypes.CMD_SUBMIT, this.handleSubmitModalTrigger.bind(this));
+    this.boltApp.command(EventTypes.TEST_CMD_SUBMIT, this.handleSubmitModalTrigger.bind(this));
 
     // View Events
     this.boltApp.view(EventTypes.MODAL_SUBMIT, this.handleSubmitPullRequest.bind(this));

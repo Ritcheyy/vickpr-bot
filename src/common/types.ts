@@ -22,6 +22,7 @@ export type SlackEventResponse = {
 export enum EventTypes {
   APP_MENTION = 'app_mention',
   CMD_SUBMIT = '/submit_pr',
+  TEST_CMD_SUBMIT = '/submit_pr_test',
   MODAL_SUBMIT = 'submit_pr_modal',
   VIEW_SUBMISSION = 'view_submission',
   UPDATE_REVIEW_STATUS = 'update_review_status',
