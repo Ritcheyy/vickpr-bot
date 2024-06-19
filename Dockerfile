@@ -4,7 +4,14 @@ WORKDIR /app
 
 COPY . .
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
+
+# install packages and set the timezone
+ENV TZ=Africa/Lagos
+
+RUN apk add --no-cache tzdata \
+    && cp /usr/share/zoneinfo/$TZ /etc/localtime \
+    && echo $TZ > /etc/timezone
 
 RUN npm install -g @nestjs/cli
 
