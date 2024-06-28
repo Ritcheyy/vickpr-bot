@@ -419,17 +419,13 @@ export const NewSubmissionBlock = (pullRequest: PullRequest, isUpdate: boolean =
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `*<${pullRequest.link}|${_capitalizeString(pullRequest.type)} - ${_capitalizeString(pullRequest.title)}>*`,
+            text: `*<@${pullRequest.author.id}> - <${pullRequest.link}|${_capitalizeString(pullRequest.type)} - ${_capitalizeString(pullRequest.title)}>*`,
           },
           accessory,
         },
         {
           type: 'section',
           fields: [
-            {
-              type: 'mrkdwn',
-              text: `*Author:*\n<@${pullRequest.author.id}>`,
-            },
             {
               type: 'mrkdwn',
               text: `*Project:*\n${pullRequest.project}`,
