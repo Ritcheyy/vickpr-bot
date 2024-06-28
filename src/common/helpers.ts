@@ -86,7 +86,7 @@ export const getUserInfo = async (client: any, userId: string) => {
           userInfoResponse.user?.real_name ||
           userInfoResponse.user?.profile?.real_name ||
           userInfoResponse.user?.profile?.display_name,
-        display_name: userInfoResponse.user.profile.display_name,
+        display_name: userInfoResponse.user?.profile?.display_name || userInfoResponse.user.name,
       };
     } else {
       throw userInfoResponse.error;
