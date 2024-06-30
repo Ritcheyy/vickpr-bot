@@ -5,7 +5,12 @@ import { ValidationError } from 'class-validator';
 import { Injectable } from '@nestjs/common';
 import { App, ExpressReceiver } from '@slack/bolt';
 import { HelpBlock, StatusUpdateNotificationBlock } from '@/common/blocks/notifications';
-import { NewSubmissionBlock, SubmitPullRequestBlock, SubmitSuccessBlock } from '@/common/blocks/submit';
+import {
+  NewSubmissionBlock,
+  SubmissionRequestBlock,
+  SubmitPullRequestBlock,
+  SubmitSuccessBlock,
+} from '@/common/blocks/submit';
 import {
   NotificationDispatchTypes,
   ReminderDispatchTypes,
@@ -13,7 +18,7 @@ import {
   ReviewStatusResponse,
 } from '@/common/constants';
 import { _extractBlockFormValues, getUserInfo } from '@/common/helpers';
-import { EventTypes, SubmitPullRequestType } from '@/common/types';
+import { ChannelTypes, EventTypes, SubmitPullRequestType } from '@/common/types';
 import { PullRequestsService } from '@/pull-requests/pull-requests.service';
 
 @Injectable()
@@ -41,6 +46,7 @@ export class SlackService {
 
     // Command Events
     this.boltApp.command(EventTypes.CMD_SUBMIT, this.handleSubmitModalTrigger.bind(this));
+    this.boltApp.action(EventTypes.CMD_SUBMIT_ALT, this.handleSubmitModalTrigger.bind(this)); // for external connections
     this.boltApp.command(EventTypes.TEST_CMD_SUBMIT, this.handleSubmitModalTrigger.bind(this));
 
     // View Events
@@ -60,22 +66,34 @@ export class SlackService {
     try {
       await say({
         text: `Hello <@${event.user}> :sunglasses: I'm VickPR - your pull request management assistant`,
+        thread_ts: event.ts,
         blocks: HelpBlock(event.user),
       });
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   }
 
   async handleAppMessage({ message, say }) {
-    if (message.channel_type === 'im') {
-      try {
-        await say({
+    if (message.channel_type === ChannelTypes.IM) {
+      let response: { text: string; blocks: object[] };
+
+      if (message.text.toString().toLowerCase().includes(EventTypes.SUBMIT_PR_TEXT)) {
+        response = {
+          text: 'Submit a Pull Request',
+          blocks: SubmissionRequestBlock(),
+        };
+      } else {
+        response = {
           text: `Hello <@${message.user}> :sunglasses: I'm VickPR - your pull request management assistant`,
           blocks: HelpBlock(message.user),
-        });
+        };
+      }
+
+      try {
+        await say(response);
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     }
   }
@@ -87,10 +105,10 @@ export class SlackService {
     try {
       await client.views.open({
         trigger_id: body.trigger_id,
-        view: SubmitPullRequestBlock(body.user_id),
+        view: SubmitPullRequestBlock(body.user_id ?? body.user?.id),
       });
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   }
 
@@ -150,7 +168,7 @@ export class SlackService {
       });
       return;
     } catch (errors) {
-      console.log(errors);
+      console.error(errors);
       if (errors instanceof Array && errors[0] instanceof ValidationError) {
         const formattedError = errors.reduce(
           (acc, error) => ({ ...acc, [blockIdMapping[error.property]]: Object.values(error.constraints)[0] }),
@@ -326,7 +344,7 @@ export class SlackService {
         });
       }
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   }
 
