@@ -78,7 +78,7 @@ export class SlackService {
     if (message.channel_type === ChannelTypes.IM) {
       let response: { text: string; blocks: object[] };
 
-      if (message.text.toString().toLowerCase().includes(EventTypes.SUBMIT_PR_TEXT)) {
+      if (message.text.toLowerCase().includes(EventTypes.SUBMIT_PR_TEXT)) {
         response = {
           text: 'Submit a Pull Request',
           blocks: SubmissionRequestBlock(),
