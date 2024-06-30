@@ -98,10 +98,19 @@ export const getUserInfo = async (client: any, userId: string) => {
 
 /*
  * get ticket id from jira link - ex: https://jira.example.com/browse/PROJ-123
- * @return number - PROJ-123
+ * @return string - 'PROJ-123'
  */
-export const getTicketIdFromLink = (link: string) => {
-  return link.split('/browse/').pop();
+export const getTicketIdFromLink = (link: string): string => {
+  const lowerCaseLink = link.toLowerCase();
+
+  if (lowerCaseLink.includes('selectedissue')) {
+    const parsedUrl = new URL(link);
+    return parsedUrl.searchParams.get('selectedIssue');
+  } else if (lowerCaseLink.includes('browse')) {
+    return link.split('/browse/').pop();
+  } else {
+    return '[ Link ]';
+  }
 };
 
 export const _capitalizeString = (str: string = '') => {
