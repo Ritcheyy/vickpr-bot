@@ -459,3 +459,29 @@ export const NewSubmissionBlock = (pullRequest: PullRequest, isUpdate: boolean =
     },
   ];
 };
+
+export const SubmissionRequestBlock = () => {
+  return [
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: 'Please click on the button below to proceed...',
+      },
+    },
+    {
+      type: 'actions',
+      elements: [
+        {
+          type: 'button',
+          text: {
+            type: 'plain_text',
+            text: 'Submit PR',
+            emoji: true,
+          },
+          action_id: 'submit_pr_alt',
+        },
+      ],
+    },
+  ];
+};
