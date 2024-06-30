@@ -24,6 +24,7 @@ export enum EventTypes {
   CMD_SUBMIT = '/submit_pr',
   CMD_SUBMIT_ALT = 'submit_pr_alt',
   TEST_CMD_SUBMIT = '/submit_pr_test',
+  SUBMIT_PR_TEXT = '!submit_pr',
   MODAL_SUBMIT = 'submit_pr_modal',
   VIEW_SUBMISSION = 'view_submission',
   UPDATE_REVIEW_STATUS = 'update_review_status',
