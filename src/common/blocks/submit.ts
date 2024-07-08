@@ -413,7 +413,7 @@ export const NewSubmissionBlock = (pullRequest: PullRequest, isUpdate: boolean =
   return [
     {
       color: getAttachmentColor(pullRequest.status),
-      fallback: `<@${pullRequest.author.id}> submitted a pull request  :rocket:`,
+      fallback: `<@${pullRequest.author.id}> submitted a pull request  :rocket: \n*${_capitalizeString(pullRequest.type)} - ${_capitalizeString(pullRequest.title)}*`,
       blocks: [
         {
           type: 'section',
@@ -428,27 +428,27 @@ export const NewSubmissionBlock = (pullRequest: PullRequest, isUpdate: boolean =
           fields: [
             {
               type: 'mrkdwn',
-              text: `*Project:*\n${pullRequest.project}`,
+              text: `*Project:* ${pullRequest.project}`,
             },
             {
               type: 'mrkdwn',
-              text: `*Type:*\n${FancyPrType[pullRequest.type]}`,
+              text: `*Type:* ${FancyPrType[pullRequest.type]}`,
             },
             {
               type: 'mrkdwn',
-              text: `*Priority:*\n${_capitalizeString(pullRequest.priority)}`,
+              text: `*Priority:* ${_capitalizeString(pullRequest.priority)}`,
             },
             {
               type: 'mrkdwn',
-              text: `*Status:*\n\`${_capitalizeString(pullRequest.status)}\``,
+              text: `*Status:* \`${_capitalizeString(pullRequest.status)}\``,
             },
             {
               type: 'mrkdwn',
-              text: `*Ticket:*\n<${pullRequest.ticket}|${getTicketIdFromLink(pullRequest.ticket)}>`,
+              text: `*Ticket:* <${pullRequest.ticket}|${getTicketIdFromLink(pullRequest.ticket)}>`,
             },
             {
               type: 'mrkdwn',
-              text: `*Reviewers:*\n${formattedReviewers}`,
+              text: `*Reviewers:* ${formattedReviewers}`,
             },
           ],
         },
