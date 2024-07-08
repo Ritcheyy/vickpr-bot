@@ -448,7 +448,7 @@ export const NewSubmissionBlock = (pullRequest: PullRequest, isUpdate: boolean =
             },
             {
               type: 'mrkdwn',
-              text: `*Reviewers:*\n${formattedReviewers}`,
+              text: `*Reviewers:* ${formattedReviewers}`,
             },
           ],
         },
