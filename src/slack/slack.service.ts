@@ -222,9 +222,10 @@ export class SlackService {
     });
 
     if (statusUpdateResponse) {
+      const currentReviewer = updatedPullRequest.reviewers.find((reviewer) => reviewer.user.id === user.id)?.user;
       // Send notifications to stakeholders depending on review status
       const stakeholders = {
-        reviewer: user.id,
+        reviewer: currentReviewer.display_name || currentReviewer.name,
         author: updatedPullRequest.author.id,
         merger: updatedPullRequest.merger.id,
       };
