@@ -320,6 +320,19 @@ export class SlackService {
       const reviewClosedStatuses: string[] = [PullRequestStatus.MERGED, PullRequestStatus.APPROVED];
 
       for (const pullRequest of pendingPullRequests) {
+        const hasPendingComment =
+          pullRequest.status === PullRequestStatus.COMMENTED ||
+          pullRequest.reviewers.some((reviewer) => reviewer.status === PullRequestStatus.COMMENTED);
+
+        if (hasPendingComment) {
+          // send notification to the author
+          return this.handleReminderDispatch({
+            stakeholdersId: [pullRequest.author.id],
+            reminderType: ReminderDispatchTypes.AUTHOR,
+            messageTimestamp: pullRequest.message?.timestamp,
+          });
+        }
+
         const pendingReviewers = pullRequest.reviewers.filter(
           (reviewer) => !reviewClosedStatuses.includes(reviewer.status),
         );
@@ -365,10 +378,11 @@ export class SlackService {
         notification.text = `${reviewers} This is a soft reminder to review and update the above pull request. Thanks!  :pray:`;
         notification.block = `${reviewers}\n\n>This is a soft reminder to review and update the above pull request. Thanks!  :pray:`;
         break;
+      case ReminderDispatchTypes.AUTHOR:
+        notification.text = `<@${stakeholdersId[0]}> This is soft a reminder to attend to the comment(s) on your pull request. Thanks!  :pray:`;
+        notification.block = `<@${stakeholdersId[0]}>\n\n>This is soft a reminder to attend to the comment(s) on your pull request. Thanks!  :pray:`;
+        break;
     }
-
-    // console.log(notificationText, stakeholdersId, messageTimestamp);
-    // return;
 
     await this.boltApp.client.chat.postMessage({
       channel: this.CHANNEL_ID,
