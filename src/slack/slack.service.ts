@@ -55,6 +55,7 @@ export class SlackService {
     // Button action Events
     this.boltApp.action(EventTypes.VIEW_SUBMISSION, ({ ack }) => ack());
     this.boltApp.action(EventTypes.VIEW_TICKET, ({ ack }) => ack());
+    this.boltApp.action(EventTypes.COMMENT_RESOLVED, this.handleUpdateCommentStatus.bind(this));
     this.boltApp.action(EventTypes.UPDATE_REVIEW_STATUS, this.handleReviewStatusUpdate.bind(this));
   }
 
@@ -225,7 +226,10 @@ export class SlackService {
       const currentReviewer = updatedPullRequest.reviewers.find((reviewer) => reviewer.user.id === user.id)?.user;
       // Send notifications to stakeholders depending on review status
       const stakeholders = {
-        reviewer: currentReviewer.display_name || currentReviewer.name,
+        reviewer: {
+          id: currentReviewer.id,
+          name: currentReviewer.display_name || currentReviewer.name,
+        },
         author: updatedPullRequest.author.id,
         merger: updatedPullRequest.merger.id,
       };
@@ -270,6 +274,7 @@ export class SlackService {
 
   async handleNotificationDispatch({ notificationDispatchType, stakeholders, body, client, ticket }) {
     if (notificationDispatchType !== NotificationDispatchTypes.NONE) {
+      const { merger, reviewer, author } = stakeholders;
       const notification = {
         text: '',
         block: '',
@@ -277,20 +282,20 @@ export class SlackService {
 
       switch (notificationDispatchType) {
         case NotificationDispatchTypes.ALL_APPROVED:
-          notification.text = `<@${stakeholders.merger}> All reviewers have approved this pull request. Please merge it if it looks good to you. Thanks Boss! :saluting_face:`;
-          notification.block = `<@${stakeholders.merger}>\n\n>All reviewers have approved this pull request. \n>Please merge it if it looks good to you. Thanks Boss! :saluting_face:`;
+          notification.text = `<@${merger}> All reviewers have approved this pull request. Please merge it if it looks good to you. Thanks Boss! :saluting_face:`;
+          notification.block = `<@${merger}>\n\n>All reviewers have approved this pull request. \n>Please merge it if it looks good to you. Thanks Boss! :saluting_face:`;
           break;
         case NotificationDispatchTypes.NEW_COMMENT:
-          notification.text = `<@${stakeholders.author}>, <@${stakeholders.reviewer}> has left a comment on your pull request. Please attend to it. Thanks!`;
-          notification.block = `<@${stakeholders.author}>\n\n><@${stakeholders.reviewer}> has left a comment on your pull request. \n>Please attend to it. Thanks!`;
+          notification.text = `<@${author}>, <@${reviewer.name}> has left a comment on your pull request. Please attend to it. Thanks!`;
+          notification.block = `<@${author}>\n\n><@${reviewer.name}> has left a comment on your pull request. \n>Please attend to it. Thanks!`;
           break;
         case NotificationDispatchTypes.DECLINED:
-          notification.text = `<@${stakeholders.author}> Unfortunately, your pull request has been declined. :pensive: Please review the feedback and make the necessary changes. Thanks!`;
-          notification.block = `<@${stakeholders.author}>\n\n>Unfortunately, your pull request has been declined. :pensive: \n>Please review the feedback and make the necessary changes. Thanks!`;
+          notification.text = `<@${author}> Unfortunately, your pull request has been declined. :pensive: Please review the feedback and make the necessary changes. Thanks!`;
+          notification.block = `<@${author}>\n\n>Unfortunately, your pull request has been declined. :pensive: \n>Please review the feedback and make the necessary changes. Thanks!`;
           break;
         case NotificationDispatchTypes.MERGED:
-          notification.text = `<@${stakeholders.author}> Your pull request has been merged. :rocket: Don't forget to update the ticket status. Thanks!`;
-          notification.block = `<@${stakeholders.author}>\n\n>Your pull request has been merged. :rocket: \n>Don't forget to update the ticket status. Thanks!`;
+          notification.text = `<@${author}> Your pull request has been merged. :rocket: Don't forget to update the ticket status. Thanks!`;
+          notification.block = `<@${author}>\n\n>Your pull request has been merged. :rocket: \n>Don't forget to update the ticket status. Thanks!`;
           break;
       }
 
@@ -301,9 +306,54 @@ export class SlackService {
         blocks: StatusUpdateNotificationBlock(
           notification.block,
           notificationDispatchType === NotificationDispatchTypes.MERGED ? ticket : undefined,
+          reviewer.id,
+          notificationDispatchType === NotificationDispatchTypes.NEW_COMMENT,
         ),
       });
       return;
+    }
+  }
+
+  async handleUpdateCommentStatus({ ack, body, action, client }) {
+    await ack();
+
+    const commentReviewerId = action.value;
+    const { message } = body;
+    const pullRequest = await this.pullRequestsService.findByMessageTimestamp(message.thread_ts);
+
+    if (pullRequest) {
+      const { status: reviewStatusRes, data: updatedPullRequest } = await this.pullRequestsService.updateReviewStatus(
+        pullRequest,
+        commentReviewerId,
+        PullRequestStatus.REVIEWING,
+      );
+
+      // Update the main pull request message in the channel
+      const statusUpdateResponse = await this.handleSubmissionMessageUpdate({
+        reviewStatusRes,
+        updatedPullRequest,
+        body: { ...body, message: { ...message, ts: message.thread_ts } },
+        client,
+      });
+
+      if (statusUpdateResponse) {
+        const { reviewers, author } = updatedPullRequest;
+
+        const currentReviewer = reviewers.find((reviewer) => reviewer.user.id === commentReviewerId)?.user;
+        const reviewerName = currentReviewer.display_name || currentReviewer.name;
+        const notification = {
+          text: `<@${author.id}>, <@${reviewerName}> has left a comment on your pull request. Please attend to it. Thanks!`,
+          block: `<@${author.id}> - (Resolved :heavy_check_mark:)\n\n><@${reviewerName}> has left a comment on your pull request. \n>Please attend to it. Thanks!`,
+        };
+
+        await client.chat.update({
+          channel: this.CHANNEL_ID,
+          ts: message.ts,
+          text: notification.text,
+          blocks: StatusUpdateNotificationBlock(notification.block, null, currentReviewer.id),
+        });
+        return;
+      }
     }
   }
 
@@ -393,9 +443,10 @@ export class SlackService {
     return;
   }
 
-  async testAction({ ack, client }) {
+  async testAction({ ack }) {
     await ack();
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const TEST_DATA = {
       title: 'Test PR',
       link: 'https://www.google.com/',
@@ -446,9 +497,9 @@ export class SlackService {
     //   text: 'There was an error with your submission. Please try again later.',
     // });
 
-    await client.chat.postMessage({
+    /* await client.chat.postMessage({
       channel: this.CHANNEL_ID,
       attachments: NewSubmissionBlock(TEST_DATA),
-    });
+    }); */
   }
 }

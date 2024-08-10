@@ -29,6 +29,7 @@ export enum EventTypes {
   VIEW_SUBMISSION = 'view_submission',
   UPDATE_REVIEW_STATUS = 'update_review_status',
   VIEW_TICKET = 'view_ticket',
+  COMMENT_RESOLVED = 'comment_resolved',
 }
 
 export enum ChannelTypes {

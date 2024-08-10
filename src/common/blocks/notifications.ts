@@ -1,4 +1,9 @@
-export const StatusUpdateNotificationBlock = (text: string, ticketLink?: string) => {
+export const StatusUpdateNotificationBlock = (
+  text: string,
+  ticketLink?: string,
+  reviewerId?: string,
+  isNewComment: boolean = false,
+) => {
   const isMerged = !!ticketLink;
   const ticketAction = isMerged
     ? [
@@ -20,6 +25,26 @@ export const StatusUpdateNotificationBlock = (text: string, ticketLink?: string)
       ]
     : [];
 
+  const commentResponseActions = isNewComment
+    ? [
+        {
+          type: 'actions',
+          elements: [
+            {
+              type: 'button',
+              text: {
+                type: 'plain_text',
+                text: 'Responded/Resolved :white_check_mark:',
+                emoji: true,
+              },
+              value: reviewerId,
+              action_id: 'comment_resolved',
+            },
+          ],
+        },
+      ]
+    : [];
+
   return [
     {
       type: 'section',
@@ -29,6 +54,7 @@ export const StatusUpdateNotificationBlock = (text: string, ticketLink?: string)
       },
     },
     ...ticketAction,
+    ...commentResponseActions,
   ];
 };
 
