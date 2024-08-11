@@ -287,7 +287,7 @@ export const SubmitPullRequestBlock = (userId: string = '') => {
         },
         label: {
           type: 'plain_text',
-          text: 'Merge manager',
+          text: 'Merge master',
           emoji: true,
         },
       },

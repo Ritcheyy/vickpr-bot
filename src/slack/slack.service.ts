@@ -259,7 +259,7 @@ export class SlackService {
       await client.chat.postEphemeral({
         channel: this.CHANNEL_ID,
         user: user.id,
-        text: 'I am unable perform this action, you are not listed as the merge manager for this pull request.',
+        text: 'I am unable perform this action, you are not listed as the merge master for this pull request.',
       });
       return false;
     }
