@@ -67,8 +67,10 @@ export const getAttachmentColor = (status: string) => {
       return '#33a12f';
     case PullRequestStatus.DECLINED:
       return '#bb3638';
+    case PullRequestStatus.ON_HOLD:
+      return '#ff1493';
     default:
-      return '#d4ad3b';
+      return '#ffc107';
   }
 };
 
@@ -115,4 +117,11 @@ export const getTicketIdFromLink = (link: string): string => {
 
 export const _capitalizeString = (str: string = '') => {
   return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
+export const _capitalizeWords = (str: string = '') => {
+  return str
+    .split(' ')
+    .map((word) => _capitalizeString(word))
+    .join(' ');
 };

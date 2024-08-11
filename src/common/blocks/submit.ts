@@ -2,6 +2,7 @@ import { PullRequest } from '@/pull-requests/schemas/pull-request.schema';
 import { FancyPrType, PullRequestStatus } from '../constants';
 import {
   _capitalizeString,
+  _capitalizeWords,
   getAttachmentColor,
   getReviewers,
   getReviewersWithStatusEmoji,
@@ -286,7 +287,7 @@ export const SubmitPullRequestBlock = (userId: string = '') => {
         },
         label: {
           type: 'plain_text',
-          text: 'Merge manager',
+          text: 'Merge master',
           emoji: true,
         },
       },
@@ -370,14 +371,6 @@ export const NewSubmissionBlock = (pullRequest: PullRequest, isUpdate: boolean =
               text: {
                 type: 'plain_text',
                 emoji: true,
-                text: ':hourglass_flowing_sand:  Reviewing',
-              },
-              value: 'reviewing',
-            },
-            {
-              text: {
-                type: 'plain_text',
-                emoji: true,
                 text: ':heavy_check_mark:  Approved',
               },
               value: 'approved',
@@ -405,6 +398,14 @@ export const NewSubmissionBlock = (pullRequest: PullRequest, isUpdate: boolean =
                 text: ':x:  Declined',
               },
               value: 'declined',
+            },
+            {
+              text: {
+                type: 'plain_text',
+                emoji: true,
+                text: ':double_vertical_bar:  On Hold',
+              },
+              value: 'on hold',
             },
           ],
           action_id: 'update_review_status',
@@ -440,7 +441,7 @@ export const NewSubmissionBlock = (pullRequest: PullRequest, isUpdate: boolean =
             },
             {
               type: 'mrkdwn',
-              text: `*Status:* \`${_capitalizeString(pullRequest.status)}\``,
+              text: `*Status:* \`${_capitalizeWords(pullRequest.status)}\``,
             },
             {
               type: 'mrkdwn',

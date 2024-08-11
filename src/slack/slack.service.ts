@@ -259,7 +259,7 @@ export class SlackService {
       await client.chat.postEphemeral({
         channel: this.CHANNEL_ID,
         user: user.id,
-        text: 'I am unable perform this action, you are not listed as the merge manager for this pull request.',
+        text: 'I am unable perform this action, you are not listed as the merge master for this pull request.',
       });
       return false;
     }
@@ -376,36 +376,36 @@ export class SlackService {
 
         if (hasPendingComment) {
           // send notification to the author
-          return this.handleReminderDispatch({
+          await this.handleReminderDispatch({
             stakeholdersId: [pullRequest.author.id],
             reminderType: ReminderDispatchTypes.AUTHOR,
             messageTimestamp: pullRequest.message?.timestamp,
           });
-        }
-
-        const pendingReviewers = pullRequest.reviewers.filter(
-          (reviewer) => !reviewClosedStatuses.includes(reviewer.status),
-        );
-
-        const hasTotalApprovals = !pendingReviewers.length;
-        let stakeholdersId: string[];
-        let reminderType: string;
-
-        if (hasTotalApprovals) {
-          // send notification to the merger instead
-          stakeholdersId = [pullRequest.merger.id];
-          reminderType = ReminderDispatchTypes.MERGER;
         } else {
-          stakeholdersId = pendingReviewers.map((reviewer) => reviewer.user.id);
-          reminderType = ReminderDispatchTypes.REVIEWERS;
-        }
+          const pendingReviewers = pullRequest.reviewers.filter(
+            (reviewer) => !reviewClosedStatuses.includes(reviewer.status),
+          );
 
-        // noinspection ES6MissingAwait, Todo: implement queue
-        this.handleReminderDispatch({
-          stakeholdersId,
-          reminderType,
-          messageTimestamp: pullRequest.message?.timestamp,
-        });
+          const hasTotalApprovals = !pendingReviewers.length;
+          let stakeholdersId: string[];
+          let reminderType: string;
+
+          if (hasTotalApprovals) {
+            // send notification to the merger instead
+            stakeholdersId = [pullRequest.merger.id];
+            reminderType = ReminderDispatchTypes.MERGER;
+          } else {
+            stakeholdersId = pendingReviewers.map((reviewer) => reviewer.user.id);
+            reminderType = ReminderDispatchTypes.REVIEWERS;
+          }
+
+          // noinspection ES6MissingAwait, Todo: implement queue
+          this.handleReminderDispatch({
+            stakeholdersId,
+            reminderType,
+            messageTimestamp: pullRequest.message?.timestamp,
+          });
+        }
       }
     } catch (error) {
       console.error(error);
