@@ -5,6 +5,7 @@ export enum PullRequestStatus {
   APPROVED = 'approved',
   MERGED = 'merged',
   DECLINED = 'declined',
+  ON_HOLD = 'on hold',
 }
 
 export enum PendingPullRequestStatus {
