@@ -45,6 +45,10 @@ export class PullRequestsService {
     return this.pullRequestModel.find().sort({ createdAt: -1 }).limit(20);
   }
 
+  async findById(id: string) {
+    return this.pullRequestModel.findOne({ _id: id });
+  }
+
   async findByMessageTimestamp(messageTimestamp: string) {
     return this.pullRequestModel.findOne({ message: { timestamp: messageTimestamp } });
   }

@@ -1,3 +1,4 @@
+import { ValidationError } from 'class-validator';
 import { PullRequestStatus } from '@/common/constants';
 import { ReviewerType } from './types';
 import { mapEmojiToStatus } from './utils';
@@ -124,4 +125,24 @@ export const _capitalizeWords = (str: string = '') => {
     .split(' ')
     .map((word) => _capitalizeString(word))
     .join(' ');
+};
+
+export const handleSubmissionError = (errors: any, blockIdMapping: any, ack: any) => {
+  if (errors instanceof Array && errors[0] instanceof ValidationError) {
+    const formattedError = errors.reduce(
+      (acc, error) => ({ ...acc, [blockIdMapping[error.property]]: Object.values(error.constraints)[0] }),
+      {},
+    );
+    ack({
+      response_action: 'errors',
+      errors: formattedError,
+    });
+  } else {
+    ack({
+      response_action: 'errors',
+      errors: {
+        [blockIdMapping['merger']]: 'An error occurred. Please try again later.',
+      },
+    });
+  }
 };
