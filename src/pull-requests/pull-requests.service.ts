@@ -50,7 +50,7 @@ export class PullRequestsService {
   }
 
   async findByMessageTimestamp(messageTimestamp: string) {
-    return this.pullRequestModel.findOne({ message: { timestamp: messageTimestamp } });
+    return this.pullRequestModel.findOne({ 'message.timestamp': messageTimestamp });
   }
 
   async update(id: string, body: UpdatePullRequestDto) {
