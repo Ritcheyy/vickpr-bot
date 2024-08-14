@@ -26,9 +26,12 @@ export enum EventTypes {
   TEST_CMD_SUBMIT = '/submit_pr_test',
   SUBMIT_PR_TEXT = '!submit_pr',
   MODAL_SUBMIT = 'submit_pr_modal',
+  MODAL_UPDATE = 'update_pr_modal',
   VIEW_SUBMISSION = 'view_submission',
+  EDIT_SUBMISSION = 'edit_submission',
   UPDATE_REVIEW_STATUS = 'update_review_status',
   VIEW_TICKET = 'view_ticket',
+  COMMENT_RESOLVED = 'comment_resolved',
 }
 
 export enum ChannelTypes {

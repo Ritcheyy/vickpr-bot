@@ -1,3 +1,4 @@
+import { ValidationError } from 'class-validator';
 import { PullRequestStatus } from '@/common/constants';
 import { ReviewerType } from './types';
 import { mapEmojiToStatus } from './utils';
@@ -67,8 +68,10 @@ export const getAttachmentColor = (status: string) => {
       return '#33a12f';
     case PullRequestStatus.DECLINED:
       return '#bb3638';
+    case PullRequestStatus.ON_HOLD:
+      return '#ff1493';
     default:
-      return '#d4ad3b';
+      return '#ffc107';
   }
 };
 
@@ -115,4 +118,31 @@ export const getTicketIdFromLink = (link: string): string => {
 
 export const _capitalizeString = (str: string = '') => {
   return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
+export const _capitalizeWords = (str: string = '') => {
+  return str
+    .split(' ')
+    .map((word) => _capitalizeString(word))
+    .join(' ');
+};
+
+export const handleSubmissionError = (errors: any, blockIdMapping: any, ack: any) => {
+  if (errors instanceof Array && errors[0] instanceof ValidationError) {
+    const formattedError = errors.reduce(
+      (acc, error) => ({ ...acc, [blockIdMapping[error.property]]: Object.values(error.constraints)[0] }),
+      {},
+    );
+    ack({
+      response_action: 'errors',
+      errors: formattedError,
+    });
+  } else {
+    ack({
+      response_action: 'errors',
+      errors: {
+        [blockIdMapping['merger']]: 'An error occurred. Please try again later.',
+      },
+    });
+  }
 };

@@ -1,23 +1,23 @@
 // noinspection TypeScriptValidateJSTypes
 
 import * as moment from 'moment';
-import { ValidationError } from 'class-validator';
 import { Injectable } from '@nestjs/common';
 import { App, ExpressReceiver } from '@slack/bolt';
 import { HelpBlock, StatusUpdateNotificationBlock } from '@/common/blocks/notifications';
 import {
+  EditPullRequestBlock,
   NewSubmissionBlock,
   SubmissionRequestBlock,
-  SubmitPullRequestBlock,
+  SubmitPullRequestModalBlock,
   SubmitSuccessBlock,
 } from '@/common/blocks/submit';
 import {
   NotificationDispatchTypes,
-  ReminderDispatchTypes,
   PullRequestStatus,
+  ReminderDispatchTypes,
   ReviewStatusResponse,
 } from '@/common/constants';
-import { _extractBlockFormValues, getUserInfo } from '@/common/helpers';
+import { _extractBlockFormValues, getUserInfo, handleSubmissionError } from '@/common/helpers';
 import { ChannelTypes, EventTypes, SubmitPullRequestType } from '@/common/types';
 import { PullRequestsService } from '@/pull-requests/pull-requests.service';
 
@@ -51,10 +51,13 @@ export class SlackService {
 
     // View Events
     this.boltApp.view(EventTypes.MODAL_SUBMIT, this.handleSubmitPullRequest.bind(this));
+    this.boltApp.view(EventTypes.MODAL_UPDATE, this.handleUpdatePullRequest.bind(this));
 
     // Button action Events
     this.boltApp.action(EventTypes.VIEW_SUBMISSION, ({ ack }) => ack());
+    this.boltApp.action(EventTypes.EDIT_SUBMISSION, this.handleEditSubmission.bind(this));
     this.boltApp.action(EventTypes.VIEW_TICKET, ({ ack }) => ack());
+    this.boltApp.action(EventTypes.COMMENT_RESOLVED, this.handleUpdateCommentStatus.bind(this));
     this.boltApp.action(EventTypes.UPDATE_REVIEW_STATUS, this.handleReviewStatusUpdate.bind(this));
   }
 
@@ -75,7 +78,7 @@ export class SlackService {
   }
 
   async handleAppMessage({ message, say }) {
-    if (message.channel_type === ChannelTypes.IM) {
+    if (message.channel_type === ChannelTypes.IM && message.subtype !== 'message_changed') {
       let response: { text: string; blocks: object[] };
 
       if (message.text.toLowerCase().includes(EventTypes.SUBMIT_PR_TEXT)) {
@@ -105,7 +108,7 @@ export class SlackService {
     try {
       await client.views.open({
         trigger_id: body.trigger_id,
-        view: SubmitPullRequestBlock(body.user_id ?? body.user?.id),
+        view: SubmitPullRequestModalBlock(body.user_id ?? body.user?.id),
       });
     } catch (error) {
       console.error(error);
@@ -147,12 +150,6 @@ export class SlackService {
         attachments: NewSubmissionBlock(newPullRequest),
       });
 
-      // Update the message timestamp
-      newPullRequest.message = {
-        timestamp: messageResponse.ts,
-      };
-      await newPullRequest.save();
-
       // Retrieve the message permalink
       const { permalink } = await client.chat.getPermalink({
         channel: this.CHANNEL_ID,
@@ -161,31 +158,25 @@ export class SlackService {
 
       // Send success message
       // Todo(not sure if this is necessary): Get if user submits through bot user dm or channel
-      await client.chat.postMessage({
+      const submissionSuccessResponse = await client.chat.postMessage({
         channel: newPullRequest.author.id,
         text: 'Your pull request has been successfully submitted!  :tada:',
-        blocks: SubmitSuccessBlock(structuredValues.title, structuredValues.type, permalink),
+        blocks: SubmitSuccessBlock(newPullRequest, permalink),
       });
+
+      // Update the message timestamp
+      newPullRequest.message = {
+        timestamp: messageResponse.ts,
+        success_timestamp: submissionSuccessResponse.ts,
+        dm_channel_id: submissionSuccessResponse.channel,
+        permalink,
+      };
+      await newPullRequest.save();
+
       return;
     } catch (errors) {
       console.error(errors);
-      if (errors instanceof Array && errors[0] instanceof ValidationError) {
-        const formattedError = errors.reduce(
-          (acc, error) => ({ ...acc, [blockIdMapping[error.property]]: Object.values(error.constraints)[0] }),
-          {},
-        );
-        ack({
-          response_action: 'errors',
-          errors: formattedError,
-        });
-      } else {
-        ack({
-          response_action: 'errors',
-          errors: {
-            [blockIdMapping['merger']]: 'There was an error with your submission. Please try again later.',
-          },
-        });
-      }
+      handleSubmissionError(errors, blockIdMapping, ack);
     }
   }
 
@@ -222,9 +213,13 @@ export class SlackService {
     });
 
     if (statusUpdateResponse) {
+      const currentReviewer = updatedPullRequest.reviewers.find((reviewer) => reviewer.user.id === user.id)?.user;
       // Send notifications to stakeholders depending on review status
       const stakeholders = {
-        reviewer: user.id,
+        reviewer: {
+          id: currentReviewer.id,
+          name: currentReviewer.display_name || currentReviewer.name,
+        },
         author: updatedPullRequest.author.id,
         merger: updatedPullRequest.merger.id,
       };
@@ -254,7 +249,7 @@ export class SlackService {
       await client.chat.postEphemeral({
         channel: this.CHANNEL_ID,
         user: user.id,
-        text: 'I am unable perform this action, you are not listed as the merge manager for this pull request.',
+        text: 'I am unable perform this action, you are not listed as the merge master for this pull request.',
       });
       return false;
     }
@@ -269,6 +264,7 @@ export class SlackService {
 
   async handleNotificationDispatch({ notificationDispatchType, stakeholders, body, client, ticket }) {
     if (notificationDispatchType !== NotificationDispatchTypes.NONE) {
+      const { merger, reviewer, author } = stakeholders;
       const notification = {
         text: '',
         block: '',
@@ -276,20 +272,20 @@ export class SlackService {
 
       switch (notificationDispatchType) {
         case NotificationDispatchTypes.ALL_APPROVED:
-          notification.text = `<@${stakeholders.merger}> All reviewers have approved this pull request. Please merge it if it looks good to you. Thanks Boss! :saluting_face:`;
-          notification.block = `<@${stakeholders.merger}>\n\n>All reviewers have approved this pull request. \n>Please merge it if it looks good to you. Thanks Boss! :saluting_face:`;
+          notification.text = `<@${merger}> All reviewers have approved this pull request. Please merge it if it looks good to you. Thanks Boss! :saluting_face:`;
+          notification.block = `<@${merger}>\n\n>All reviewers have approved this pull request. \n>Please merge it if it looks good to you. Thanks Boss! :saluting_face:`;
           break;
         case NotificationDispatchTypes.NEW_COMMENT:
-          notification.text = `<@${stakeholders.author}>, <@${stakeholders.reviewer}> has left a comment on your pull request. Please attend to it. Thanks!`;
-          notification.block = `<@${stakeholders.author}>\n\n><@${stakeholders.reviewer}> has left a comment on your pull request. \n>Please attend to it. Thanks!`;
+          notification.text = `<@${author}>, <@${reviewer.name}> has left a comment on your pull request. Please attend to it. Thanks!`;
+          notification.block = `<@${author}>\n\n><@${reviewer.name}> has left a comment on your pull request. \n>Please attend to it. Thanks!`;
           break;
         case NotificationDispatchTypes.DECLINED:
-          notification.text = `<@${stakeholders.author}> Unfortunately, your pull request has been declined. :pensive: Please review the feedback and make the necessary changes. Thanks!`;
-          notification.block = `<@${stakeholders.author}>\n\n>Unfortunately, your pull request has been declined. :pensive: \n>Please review the feedback and make the necessary changes. Thanks!`;
+          notification.text = `<@${author}> Unfortunately, your pull request has been declined. :pensive: Please review the feedback and make the necessary changes. Thanks!`;
+          notification.block = `<@${author}>\n\n>Unfortunately, your pull request has been declined. :pensive: \n>Please review the feedback and make the necessary changes. Thanks!`;
           break;
         case NotificationDispatchTypes.MERGED:
-          notification.text = `<@${stakeholders.author}> Your pull request has been merged. :rocket: Don't forget to update the ticket status. Thanks!`;
-          notification.block = `<@${stakeholders.author}>\n\n>Your pull request has been merged. :rocket: \n>Don't forget to update the ticket status. Thanks!`;
+          notification.text = `<@${author}> Your pull request has been merged. :rocket: Don't forget to update the ticket status. Thanks!`;
+          notification.block = `<@${author}>\n\n>Your pull request has been merged. :rocket: \n>Don't forget to update the ticket status. Thanks!`;
           break;
       }
 
@@ -300,9 +296,138 @@ export class SlackService {
         blocks: StatusUpdateNotificationBlock(
           notification.block,
           notificationDispatchType === NotificationDispatchTypes.MERGED ? ticket : undefined,
+          reviewer.id,
+          notificationDispatchType === NotificationDispatchTypes.NEW_COMMENT,
         ),
       });
       return;
+    }
+  }
+
+  async handleUpdateCommentStatus({ ack, body, action, client }) {
+    await ack();
+
+    const commentReviewerId = action.value;
+    const { message } = body;
+    const pullRequest = await this.pullRequestsService.findByMessageTimestamp(message.thread_ts);
+
+    if (pullRequest) {
+      const { status: reviewStatusRes, data: updatedPullRequest } = await this.pullRequestsService.updateReviewStatus(
+        pullRequest,
+        commentReviewerId,
+        PullRequestStatus.REVIEWING,
+      );
+
+      // Update the main pull request message in the channel
+      const statusUpdateResponse = await this.handleSubmissionMessageUpdate({
+        reviewStatusRes,
+        updatedPullRequest,
+        body: { ...body, message: { ...message, ts: message.thread_ts } },
+        client,
+      });
+
+      if (statusUpdateResponse) {
+        const { reviewers, author } = updatedPullRequest;
+
+        const currentReviewer = reviewers.find((reviewer) => reviewer.user.id === commentReviewerId)?.user;
+        const reviewerName = currentReviewer.display_name || currentReviewer.name;
+        const notification = {
+          text: `<@${author.id}>, <@${reviewerName}> has left a comment on your pull request. Please attend to it. Thanks!`,
+          block: `<@${author.id}> - (Resolved :heavy_check_mark:)\n\n><@${reviewerName}> has left a comment on your pull request. \n>Please attend to it. Thanks!`,
+        };
+
+        await client.chat.update({
+          channel: this.CHANNEL_ID,
+          ts: message.ts,
+          text: notification.text,
+          blocks: StatusUpdateNotificationBlock(notification.block, null, currentReviewer.id),
+        });
+        return;
+      }
+    }
+  }
+
+  async handleEditSubmission({ ack, body, client, action }) {
+    await ack();
+
+    try {
+      const pullRequestId = action.value;
+      const pullRequest = await this.pullRequestsService.findById(pullRequestId);
+
+      if (!pullRequest) {
+        return;
+      }
+      await client.views.open({
+        trigger_id: body.trigger_id,
+        view: EditPullRequestBlock(pullRequest),
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async handleUpdatePullRequest({ ack, view, client, body }) {
+    const pullRequestId = view.private_metadata;
+
+    if (!pullRequestId) {
+      await ack({ response_action: 'errors', errors: { message: 'Invalid request' } });
+      return;
+    }
+
+    // Extract the values from the submitted form
+    const { structuredValues, blockIdMapping } = _extractBlockFormValues(view.state.values);
+    structuredValues.author = body.user.id;
+
+    try {
+      await this.pullRequestsService.validatePullRequestData(structuredValues);
+      const pullRequest = await this.pullRequestsService.findById(pullRequestId);
+      if (!pullRequest) {
+        await ack({ response_action: 'errors', errors: { message: 'Invalid request' } });
+        return;
+      }
+
+      await ack();
+
+      // fetch users' information
+      structuredValues.author = pullRequest.author;
+
+      if (structuredValues.merger === pullRequest.merger.id) {
+        structuredValues.merger = pullRequest.merger;
+      } else {
+        structuredValues.merger = await getUserInfo(client, structuredValues.merger);
+      }
+
+      if (JSON.stringify(structuredValues.reviewers) == JSON.stringify(pullRequest.reviewers.map((r) => r.user.id))) {
+        structuredValues.reviewers = pullRequest.reviewers;
+      } else {
+        const _reviewersPromises = Promise.all(
+          structuredValues.reviewers.map((reviewerId: string) => getUserInfo(client, reviewerId)),
+        );
+        const reviewers = await _reviewersPromises;
+
+        structuredValues.reviewers = reviewers.map((reviewer) => ({
+          user: reviewer,
+          status: pullRequest.reviewers.find((r) => r.user.id === reviewer.id)?.status || PullRequestStatus.PENDING,
+        }));
+      }
+
+      const updatedPullRequest = await this.pullRequestsService.update(pullRequestId, structuredValues);
+
+      await client.chat.update({
+        channel: this.CHANNEL_ID,
+        ts: pullRequest.message.timestamp,
+        attachments: NewSubmissionBlock(updatedPullRequest),
+      });
+
+      await client.chat.update({
+        channel: pullRequest.message.dm_channel_id,
+        ts: pullRequest.message.success_timestamp,
+        blocks: SubmitSuccessBlock(updatedPullRequest, pullRequest.message.permalink, true),
+        text: `Your pull request has been successfully updated!`,
+      });
+    } catch (errors) {
+      console.error(errors);
+      handleSubmissionError(errors, blockIdMapping, ack);
     }
   }
 
@@ -319,29 +444,42 @@ export class SlackService {
       const reviewClosedStatuses: string[] = [PullRequestStatus.MERGED, PullRequestStatus.APPROVED];
 
       for (const pullRequest of pendingPullRequests) {
-        const pendingReviewers = pullRequest.reviewers.filter(
-          (reviewer) => !reviewClosedStatuses.includes(reviewer.status),
-        );
+        const hasPendingComment =
+          pullRequest.status === PullRequestStatus.COMMENTED ||
+          pullRequest.reviewers.some((reviewer) => reviewer.status === PullRequestStatus.COMMENTED);
 
-        const hasTotalApprovals = !pendingReviewers.length;
-        let stakeholdersId: string[];
-        let reminderType: string;
-
-        if (hasTotalApprovals) {
-          // send notification to the merger instead
-          stakeholdersId = [pullRequest.merger.id];
-          reminderType = ReminderDispatchTypes.MERGER;
+        if (hasPendingComment) {
+          // send notification to the author
+          await this.handleReminderDispatch({
+            stakeholdersId: [pullRequest.author.id],
+            reminderType: ReminderDispatchTypes.AUTHOR,
+            messageTimestamp: pullRequest.message?.timestamp,
+          });
         } else {
-          stakeholdersId = pendingReviewers.map((reviewer) => reviewer.user.id);
-          reminderType = ReminderDispatchTypes.REVIEWERS;
-        }
+          const pendingReviewers = pullRequest.reviewers.filter(
+            (reviewer) => !reviewClosedStatuses.includes(reviewer.status),
+          );
 
-        // noinspection ES6MissingAwait, Todo: implement queue
-        this.handleReminderDispatch({
-          stakeholdersId,
-          reminderType,
-          messageTimestamp: pullRequest.message?.timestamp,
-        });
+          const hasTotalApprovals = !pendingReviewers.length;
+          let stakeholdersId: string[];
+          let reminderType: string;
+
+          if (hasTotalApprovals) {
+            // send notification to the merger instead
+            stakeholdersId = [pullRequest.merger.id];
+            reminderType = ReminderDispatchTypes.MERGER;
+          } else {
+            stakeholdersId = pendingReviewers.map((reviewer) => reviewer.user.id);
+            reminderType = ReminderDispatchTypes.REVIEWERS;
+          }
+
+          // noinspection ES6MissingAwait, Todo: implement queue
+          this.handleReminderDispatch({
+            stakeholdersId,
+            reminderType,
+            messageTimestamp: pullRequest.message?.timestamp,
+          });
+        }
       }
     } catch (error) {
       console.error(error);
@@ -364,10 +502,11 @@ export class SlackService {
         notification.text = `${reviewers} This is a soft reminder to review and update the above pull request. Thanks!  :pray:`;
         notification.block = `${reviewers}\n\n>This is a soft reminder to review and update the above pull request. Thanks!  :pray:`;
         break;
+      case ReminderDispatchTypes.AUTHOR:
+        notification.text = `<@${stakeholdersId[0]}> This is soft a reminder to attend to the comment(s) on your pull request. Thanks!  :pray:`;
+        notification.block = `<@${stakeholdersId[0]}>\n\n>This is soft a reminder to attend to the comment(s) on your pull request. Thanks!  :pray:`;
+        break;
     }
-
-    // console.log(notificationText, stakeholdersId, messageTimestamp);
-    // return;
 
     await this.boltApp.client.chat.postMessage({
       channel: this.CHANNEL_ID,
@@ -378,9 +517,10 @@ export class SlackService {
     return;
   }
 
-  async testAction({ ack, client }) {
+  async testAction({ ack }) {
     await ack();
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const TEST_DATA = {
       title: 'Test PR',
       link: 'https://www.google.com/',
@@ -431,9 +571,9 @@ export class SlackService {
     //   text: 'There was an error with your submission. Please try again later.',
     // });
 
-    await client.chat.postMessage({
+    /* await client.chat.postMessage({
       channel: this.CHANNEL_ID,
       attachments: NewSubmissionBlock(TEST_DATA),
-    });
+    }); */
   }
 }

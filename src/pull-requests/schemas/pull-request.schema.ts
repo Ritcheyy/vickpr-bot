@@ -28,6 +28,15 @@ class Reviewer {
 class Message {
   @Prop({ required: true })
   timestamp: string;
+
+  @Prop({ required: false })
+  success_timestamp: string;
+
+  @Prop({ required: false })
+  dm_channel_id: string;
+
+  @Prop({ required: false })
+  permalink: string;
 }
 
 @Schema()

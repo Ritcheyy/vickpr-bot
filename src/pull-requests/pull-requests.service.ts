@@ -45,6 +45,10 @@ export class PullRequestsService {
     return this.pullRequestModel.find().sort({ createdAt: -1 }).limit(20);
   }
 
+  async findById(id: string) {
+    return this.pullRequestModel.findOne({ _id: id });
+  }
+
   async findByMessageTimestamp(messageTimestamp: string) {
     return this.pullRequestModel.findOne({ message: { timestamp: messageTimestamp } });
   }
@@ -78,7 +82,7 @@ export class PullRequestsService {
         };
       }
 
-      if (status === PullRequestStatus.MERGED && !isMerger) {
+      if ((status === PullRequestStatus.MERGED || status === PullRequestStatus.ON_HOLD) && !isMerger) {
         return {
           status: ReviewStatusResponse.NOT_THE_MERGER,
           data: null,
@@ -122,10 +126,10 @@ export class PullRequestsService {
   }
 
   async getAllPending() {
-    const prClosedStatuses = [PullRequestStatus.MERGED, PullRequestStatus.DECLINED];
+    const prClosedStatuses = [PullRequestStatus.MERGED, PullRequestStatus.DECLINED, PullRequestStatus.ON_HOLD];
     const formattedDateLimit = moment().subtract(this.DATE_LIMIT, 'days').format();
 
-    // get pending pull requests that are not merged/declined and were created within the last DATE_LIMIT days
+    // get pending pull requests that are not merged/declined/on-hold and were created within the last DATE_LIMIT days
     return this.pullRequestModel
       .find({ status: { $nin: prClosedStatuses }, createdAt: { $gte: formattedDateLimit } })
       .sort({ createdAt: -1 });
