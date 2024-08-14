@@ -183,53 +183,57 @@ export class SlackService {
   async handleReviewStatusUpdate({ ack, body, client }) {
     await ack();
 
-    const { message, user, actions } = body;
-    const statusValue = actions[0].selected_option.value;
+    try {
+      const { message, user, actions } = body;
+      const statusValue = actions[0].selected_option.value;
 
-    const pullRequest = await this.pullRequestsService.findByMessageTimestamp(message.ts);
+      const pullRequest = await this.pullRequestsService.findByMessageTimestamp(message.ts);
 
-    if (!pullRequest) {
-      await client.chat.postEphemeral({
-        channel: this.CHANNEL_ID,
-        thread_ts: message.ts,
-        user: user.id,
-        text: "Sorry, I can't find the pull request submission. Please try again later.",
-      });
-      return;
-    }
+      if (!pullRequest) {
+        await client.chat.postEphemeral({
+          channel: this.CHANNEL_ID,
+          thread_ts: message.ts,
+          user: user.id,
+          text: "Sorry, I can't find the pull request submission. Please try again later.",
+        });
+        return;
+      }
 
-    const {
-      status: reviewStatusRes,
-      data: updatedPullRequest,
-      notificationDispatchType,
-    } = await this.pullRequestsService.updateReviewStatus(pullRequest, user.id, statusValue);
-
-    // Update the pull request message in the channel
-    const statusUpdateResponse = await this.handleSubmissionMessageUpdate({
-      reviewStatusRes,
-      updatedPullRequest,
-      body,
-      client,
-    });
-
-    if (statusUpdateResponse) {
-      const currentReviewer = updatedPullRequest.reviewers.find((reviewer) => reviewer.user.id === user.id)?.user;
-      // Send notifications to stakeholders depending on review status
-      const stakeholders = {
-        reviewer: {
-          id: currentReviewer.id,
-          name: currentReviewer.display_name || currentReviewer.name,
-        },
-        author: updatedPullRequest.author.id,
-        merger: updatedPullRequest.merger.id,
-      };
-      await this.handleNotificationDispatch({
+      const {
+        status: reviewStatusRes,
+        data: updatedPullRequest,
         notificationDispatchType,
-        stakeholders,
+      } = await this.pullRequestsService.updateReviewStatus(pullRequest, user.id, statusValue);
+
+      // Update the pull request message in the channel
+      const statusUpdateResponse = await this.handleSubmissionMessageUpdate({
+        reviewStatusRes,
+        updatedPullRequest,
         body,
         client,
-        ticket: updatedPullRequest.ticket,
       });
+
+      if (statusUpdateResponse) {
+        const currentReviewer = updatedPullRequest.reviewers.find((reviewer) => reviewer.user.id === user.id)?.user;
+        // Send notifications to stakeholders depending on review status
+        const stakeholders = {
+          reviewer: {
+            id: currentReviewer.id,
+            name: currentReviewer.display_name || currentReviewer.name,
+          },
+          author: updatedPullRequest.author.id,
+          merger: updatedPullRequest.merger.id,
+        };
+        await this.handleNotificationDispatch({
+          notificationDispatchType,
+          stakeholders,
+          body,
+          client,
+          ticket: updatedPullRequest.ticket,
+        });
+      }
+    } catch (e) {
+      console.log(e);
     }
   }
 
