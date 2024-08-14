@@ -1,23 +1,23 @@
 // noinspection TypeScriptValidateJSTypes
 
 import * as moment from 'moment';
-import { ValidationError } from 'class-validator';
 import { Injectable } from '@nestjs/common';
 import { App, ExpressReceiver } from '@slack/bolt';
 import { HelpBlock, StatusUpdateNotificationBlock } from '@/common/blocks/notifications';
 import {
+  EditPullRequestBlock,
   NewSubmissionBlock,
   SubmissionRequestBlock,
-  SubmitPullRequestBlock,
+  SubmitPullRequestModalBlock,
   SubmitSuccessBlock,
 } from '@/common/blocks/submit';
 import {
   NotificationDispatchTypes,
-  ReminderDispatchTypes,
   PullRequestStatus,
+  ReminderDispatchTypes,
   ReviewStatusResponse,
 } from '@/common/constants';
-import { _extractBlockFormValues, getUserInfo } from '@/common/helpers';
+import { _extractBlockFormValues, getUserInfo, handleSubmissionError } from '@/common/helpers';
 import { ChannelTypes, EventTypes, SubmitPullRequestType } from '@/common/types';
 import { PullRequestsService } from '@/pull-requests/pull-requests.service';
 
@@ -51,9 +51,11 @@ export class SlackService {
 
     // View Events
     this.boltApp.view(EventTypes.MODAL_SUBMIT, this.handleSubmitPullRequest.bind(this));
+    this.boltApp.view(EventTypes.MODAL_UPDATE, this.handleUpdatePullRequest.bind(this));
 
     // Button action Events
     this.boltApp.action(EventTypes.VIEW_SUBMISSION, ({ ack }) => ack());
+    this.boltApp.action(EventTypes.EDIT_SUBMISSION, this.handleEditSubmission.bind(this));
     this.boltApp.action(EventTypes.VIEW_TICKET, ({ ack }) => ack());
     this.boltApp.action(EventTypes.COMMENT_RESOLVED, this.handleUpdateCommentStatus.bind(this));
     this.boltApp.action(EventTypes.UPDATE_REVIEW_STATUS, this.handleReviewStatusUpdate.bind(this));
@@ -76,7 +78,7 @@ export class SlackService {
   }
 
   async handleAppMessage({ message, say }) {
-    if (message.channel_type === ChannelTypes.IM) {
+    if (message.channel_type === ChannelTypes.IM && message.subtype !== 'message_changed') {
       let response: { text: string; blocks: object[] };
 
       if (message.text.toLowerCase().includes(EventTypes.SUBMIT_PR_TEXT)) {
@@ -106,7 +108,7 @@ export class SlackService {
     try {
       await client.views.open({
         trigger_id: body.trigger_id,
-        view: SubmitPullRequestBlock(body.user_id ?? body.user?.id),
+        view: SubmitPullRequestModalBlock(body.user_id ?? body.user?.id),
       });
     } catch (error) {
       console.error(error);
@@ -148,12 +150,6 @@ export class SlackService {
         attachments: NewSubmissionBlock(newPullRequest),
       });
 
-      // Update the message timestamp
-      newPullRequest.message = {
-        timestamp: messageResponse.ts,
-      };
-      await newPullRequest.save();
-
       // Retrieve the message permalink
       const { permalink } = await client.chat.getPermalink({
         channel: this.CHANNEL_ID,
@@ -162,31 +158,25 @@ export class SlackService {
 
       // Send success message
       // Todo(not sure if this is necessary): Get if user submits through bot user dm or channel
-      await client.chat.postMessage({
+      const submissionSuccessResponse = await client.chat.postMessage({
         channel: newPullRequest.author.id,
         text: 'Your pull request has been successfully submitted!  :tada:',
-        blocks: SubmitSuccessBlock(structuredValues.title, structuredValues.type, permalink),
+        blocks: SubmitSuccessBlock(newPullRequest, permalink),
       });
+
+      // Update the message timestamp
+      newPullRequest.message = {
+        timestamp: messageResponse.ts,
+        success_timestamp: submissionSuccessResponse.ts,
+        dm_channel_id: submissionSuccessResponse.channel,
+        permalink,
+      };
+      await newPullRequest.save();
+
       return;
     } catch (errors) {
       console.error(errors);
-      if (errors instanceof Array && errors[0] instanceof ValidationError) {
-        const formattedError = errors.reduce(
-          (acc, error) => ({ ...acc, [blockIdMapping[error.property]]: Object.values(error.constraints)[0] }),
-          {},
-        );
-        ack({
-          response_action: 'errors',
-          errors: formattedError,
-        });
-      } else {
-        ack({
-          response_action: 'errors',
-          errors: {
-            [blockIdMapping['merger']]: 'There was an error with your submission. Please try again later.',
-          },
-        });
-      }
+      handleSubmissionError(errors, blockIdMapping, ack);
     }
   }
 
@@ -354,6 +344,90 @@ export class SlackService {
         });
         return;
       }
+    }
+  }
+
+  async handleEditSubmission({ ack, body, client, action }) {
+    await ack();
+
+    try {
+      const pullRequestId = action.value;
+      const pullRequest = await this.pullRequestsService.findById(pullRequestId);
+
+      if (!pullRequest) {
+        return;
+      }
+      await client.views.open({
+        trigger_id: body.trigger_id,
+        view: EditPullRequestBlock(pullRequest),
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async handleUpdatePullRequest({ ack, view, client, body }) {
+    const pullRequestId = view.private_metadata;
+
+    if (!pullRequestId) {
+      await ack({ response_action: 'errors', errors: { message: 'Invalid request' } });
+      return;
+    }
+
+    // Extract the values from the submitted form
+    const { structuredValues, blockIdMapping } = _extractBlockFormValues(view.state.values);
+    structuredValues.author = body.user.id;
+
+    try {
+      await this.pullRequestsService.validatePullRequestData(structuredValues);
+      const pullRequest = await this.pullRequestsService.findById(pullRequestId);
+      if (!pullRequest) {
+        await ack({ response_action: 'errors', errors: { message: 'Invalid request' } });
+        return;
+      }
+
+      await ack();
+
+      // fetch users' information
+      structuredValues.author = pullRequest.author;
+
+      if (structuredValues.merger === pullRequest.merger.id) {
+        structuredValues.merger = pullRequest.merger;
+      } else {
+        structuredValues.merger = await getUserInfo(client, structuredValues.merger);
+      }
+
+      if (JSON.stringify(structuredValues.reviewers) == JSON.stringify(pullRequest.reviewers.map((r) => r.user.id))) {
+        structuredValues.reviewers = pullRequest.reviewers;
+      } else {
+        const _reviewersPromises = Promise.all(
+          structuredValues.reviewers.map((reviewerId: string) => getUserInfo(client, reviewerId)),
+        );
+        const reviewers = await _reviewersPromises;
+
+        structuredValues.reviewers = reviewers.map((reviewer) => ({
+          user: reviewer,
+          status: pullRequest.reviewers.find((r) => r.user.id === reviewer.id)?.status || PullRequestStatus.PENDING,
+        }));
+      }
+
+      const updatedPullRequest = await this.pullRequestsService.update(pullRequestId, structuredValues);
+
+      await client.chat.update({
+        channel: this.CHANNEL_ID,
+        ts: pullRequest.message.timestamp,
+        attachments: NewSubmissionBlock(updatedPullRequest),
+      });
+
+      await client.chat.update({
+        channel: pullRequest.message.dm_channel_id,
+        ts: pullRequest.message.success_timestamp,
+        blocks: SubmitSuccessBlock(updatedPullRequest, pullRequest.message.permalink, true),
+        text: `Your pull request has been successfully updated!`,
+      });
+    } catch (errors) {
+      console.error(errors);
+      handleSubmissionError(errors, blockIdMapping, ack);
     }
   }
 
