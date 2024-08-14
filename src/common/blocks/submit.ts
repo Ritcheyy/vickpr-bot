@@ -239,15 +239,17 @@ export const SubmitSuccessBlock = (
                 bold: true,
               },
             },
-            isUpdate
-              ? {
-                  type: 'text',
-                  text: 'updated',
-                  style: {
-                    code: true,
+            ...(isUpdate
+              ? [
+                  {
+                    type: 'text',
+                    text: 'updated',
+                    style: {
+                      code: true,
+                    },
                   },
-                }
-              : '',
+                ]
+              : []),
           ],
         },
       ],
