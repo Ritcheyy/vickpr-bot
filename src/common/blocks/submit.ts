@@ -350,7 +350,7 @@ export const NewSubmissionBlock = (pullRequest: PullRequest, isUpdate: boolean =
   return [
     {
       color: getAttachmentColor(pullRequest.status),
-      fallback: `<@${pullRequest.author.id}> submitted a pull request  :rocket: \n*${_capitalizeString(pullRequest.type)} - ${_capitalizeString(pullRequest.title)}*`,
+      fallback: `@${pullRequest.author.display_name || pullRequest.author.name} submitted a pull request  :rocket: \n*${_capitalizeString(pullRequest.type)} - ${_capitalizeString(pullRequest.title)}*`,
       blocks: [
         {
           type: 'section',
