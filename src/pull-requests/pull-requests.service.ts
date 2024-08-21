@@ -79,6 +79,7 @@ export class PullRequestsService {
           status: ReviewStatusResponse.NOT_A_REVIEWER,
           data: null,
           notificationDispatchType: NotificationDispatchTypes.NONE,
+          reviewer: null,
         };
       }
 
@@ -87,6 +88,7 @@ export class PullRequestsService {
           status: ReviewStatusResponse.NOT_THE_MERGER,
           data: null,
           notificationDispatchType: NotificationDispatchTypes.NONE,
+          reviewer: null,
         };
       }
 
@@ -116,6 +118,7 @@ export class PullRequestsService {
           status: ReviewStatusResponse.SUCCESS,
           data: updatedPullRequest,
           notificationDispatchType: this.getNotificationDispatchType(status, hasTotalApprovals),
+          reviewer: reviewer?.user ?? updatedPullRequest.merger,
         };
       } else {
         throw new UnprocessableEntityException('Pull request could not be updated');

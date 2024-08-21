@@ -203,6 +203,7 @@ export class SlackService {
         status: reviewStatusRes,
         data: updatedPullRequest,
         notificationDispatchType,
+        reviewer: currentReviewer,
       } = await this.pullRequestsService.updateReviewStatus(pullRequest, user.id, statusValue);
 
       // Update the pull request message in the channel
@@ -214,7 +215,6 @@ export class SlackService {
       });
 
       if (statusUpdateResponse) {
-        const currentReviewer = updatedPullRequest.reviewers.find((reviewer) => reviewer.user.id === user.id)?.user;
         // Send notifications to stakeholders depending on review status
         const stakeholders = {
           reviewer: {
@@ -280,8 +280,8 @@ export class SlackService {
           notification.block = `<@${merger}>\n\n>All reviewers have approved this pull request. \n>Please merge it if it looks good to you. Thanks Boss! :saluting_face:`;
           break;
         case NotificationDispatchTypes.NEW_COMMENT:
-          notification.text = `<@${author}>, <@${reviewer.name}> has left a comment on your pull request. Please attend to it. Thanks!`;
-          notification.block = `<@${author}>\n\n><@${reviewer.name}> has left a comment on your pull request. \n>Please attend to it. Thanks!`;
+          notification.text = `<@${author}>, @${reviewer.name} has left a comment on your pull request. Please attend to it. Thanks!`;
+          notification.block = `<@${author}>\n\n>@${reviewer.name} has left a comment on your pull request. \n>Please attend to it. Thanks!`;
           break;
         case NotificationDispatchTypes.DECLINED:
           notification.text = `<@${author}> Unfortunately, your pull request has been declined. :pensive: Please review the feedback and make the necessary changes. Thanks!`;
@@ -316,7 +316,11 @@ export class SlackService {
     const pullRequest = await this.pullRequestsService.findByMessageTimestamp(message.thread_ts);
 
     if (pullRequest) {
-      const { status: reviewStatusRes, data: updatedPullRequest } = await this.pullRequestsService.updateReviewStatus(
+      const {
+        status: reviewStatusRes,
+        data: updatedPullRequest,
+        reviewer: currentReviewer,
+      } = await this.pullRequestsService.updateReviewStatus(
         pullRequest,
         commentReviewerId,
         PullRequestStatus.REVIEWING,
@@ -331,13 +335,12 @@ export class SlackService {
       });
 
       if (statusUpdateResponse) {
-        const { reviewers, author } = updatedPullRequest;
+        const { author } = updatedPullRequest;
 
-        const currentReviewer = reviewers.find((reviewer) => reviewer.user.id === commentReviewerId)?.user;
-        const reviewerName = currentReviewer.display_name || currentReviewer.name;
+        const reviewerName = currentReviewer?.display_name ?? currentReviewer.name;
         const notification = {
-          text: `<@${author.id}>, <@${reviewerName}> has left a comment on your pull request. Please attend to it. Thanks!`,
-          block: `<@${author.id}> - (Resolved :heavy_check_mark:)\n\n><@${reviewerName}> has left a comment on your pull request. \n>Please attend to it. Thanks!`,
+          text: `<@${author.id}>, @${reviewerName} has left a comment on your pull request. Please attend to it. Thanks!`,
+          block: `<@${author.id}> - (Resolved :heavy_check_mark:)\n\n>@${reviewerName} has left a comment on your pull request. \n>Please attend to it. Thanks!`,
         };
 
         await client.chat.update({
