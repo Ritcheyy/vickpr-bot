@@ -73,6 +73,9 @@ export class PullRequest {
 
   @Prop({ type: Message, default: null, _id: false })
   message?: Message;
+
+  @Prop({ required: true, default: 0 })
+  reminder_count: number;
 }
 
 export const PullRequestSchema = SchemaFactory.createForClass(PullRequest);
