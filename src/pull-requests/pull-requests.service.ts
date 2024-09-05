@@ -11,6 +11,7 @@ import { PullRequest, PullRequestDocument } from './schemas/pull-request.schema'
 @Injectable()
 export class PullRequestsService {
   private DATE_LIMIT = 7; // todo: move to config
+  private readonly REMINDER_COUNT_LIMIT = 4;
 
   constructor(
     @InjectModel(PullRequest.name)
@@ -69,9 +70,11 @@ export class PullRequestsService {
 
   async updateReviewStatus(pullRequest: PullRequestDocument, userId: string, status: string) {
     try {
+      const { _id, reminder_count, reviewers, merger } = pullRequest;
+
       // check if user is a reviewer for the pull request
-      const reviewer = pullRequest.reviewers.find((reviewer) => reviewer.user.id === userId);
-      const isMerger = pullRequest.merger.id === userId;
+      const reviewer = reviewers.find((reviewer) => reviewer.user.id === userId);
+      const isMerger = merger.id === userId;
       let updatedPullRequest: PullRequest = null;
 
       if (!reviewer && !isMerger) {
@@ -93,19 +96,46 @@ export class PullRequestsService {
       }
 
       if (reviewer) {
-        updatedPullRequest = await this.pullRequestModel.findOneAndUpdate(
-          { _id: pullRequest._id },
-          { $set: { 'reviewers.$[reviewer].status': status } },
-          { arrayFilters: [{ 'reviewer.user.id': userId }], new: true, lean: true },
-        );
+        if (status === PullRequestStatus.COMMENTED || status === PullRequestStatus.REVIEWING) {
+          // reset the reminder count to 2 if limit is reached
+          const resetCount = reminder_count >= this.REMINDER_COUNT_LIMIT ? 2 : reminder_count - 1 || 0;
+
+          updatedPullRequest = await this.pullRequestModel.findOneAndUpdate(
+            { _id },
+            {
+              $set: {
+                'reviewers.$[reviewer].status': status,
+                reminder_count: resetCount,
+              },
+            },
+            { arrayFilters: [{ 'reviewer.user.id': userId }], new: true, lean: true },
+          );
+        } else {
+          updatedPullRequest = await this.pullRequestModel.findOneAndUpdate(
+            { _id },
+            { $set: { 'reviewers.$[reviewer].status': status } },
+            { arrayFilters: [{ 'reviewer.user.id': userId }], new: true, lean: true },
+          );
+        }
       }
 
       if (isMerger) {
-        updatedPullRequest = await this.pullRequestModel.findOneAndUpdate(
-          { _id: pullRequest._id },
-          { $set: { status: status } },
-          { new: true, lean: true },
-        );
+        if (status === PullRequestStatus.COMMENTED) {
+          // reset the reminder count to 2 if limit is reached
+          const resetCount = reminder_count >= this.REMINDER_COUNT_LIMIT ? 2 : reminder_count;
+
+          updatedPullRequest = await this.pullRequestModel.findOneAndUpdate(
+            { _id },
+            { $set: { status, reminder_count: resetCount } },
+            { new: true, lean: true },
+          );
+        } else {
+          updatedPullRequest = await this.pullRequestModel.findOneAndUpdate(
+            { _id },
+            { $set: { status } },
+            { new: true, lean: true },
+          );
+        }
       }
 
       if (updatedPullRequest) {
