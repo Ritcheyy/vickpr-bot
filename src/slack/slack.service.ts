@@ -26,6 +26,8 @@ export class SlackService {
   private boltApp: App;
   private readonly receiver: ExpressReceiver;
   private readonly CHANNEL_ID = process.env.AUTHORIZED_CHANNEL_ID;
+  private readonly SCRUM_MASTER_ID = process.env.SCRUM_MASTER_USER_ID;
+  private readonly REMINDER_COUNT_LIMIT = 4;
 
   constructor(private readonly pullRequestsService: PullRequestsService) {
     this.receiver = new ExpressReceiver({
@@ -460,7 +462,10 @@ export class SlackService {
           await this.handleReminderDispatch({
             stakeholdersId: [pullRequest.author.id],
             reminderType: ReminderDispatchTypes.AUTHOR,
-            messageTimestamp: pullRequest.message?.timestamp,
+            metaData: {
+              reminderCount: pullRequest.reminder_count,
+              messageTimestamp: pullRequest.message?.timestamp,
+            },
           });
         } else {
           const pendingReviewers = pullRequest.reviewers.filter(
@@ -481,11 +486,19 @@ export class SlackService {
           }
 
           // noinspection ES6MissingAwait, Todo: implement queue
-          this.handleReminderDispatch({
+          await this.handleReminderDispatch({
             stakeholdersId,
             reminderType,
-            messageTimestamp: pullRequest.message?.timestamp,
+            metaData: {
+              reminderCount: pullRequest.reminder_count,
+              messageTimestamp: pullRequest.message?.timestamp,
+            },
           });
+        }
+
+        if (pullRequest.reminder_count !== undefined) {
+          pullRequest.reminder_count += 1;
+          await pullRequest.save();
         }
       }
     } catch (error) {
@@ -493,7 +506,7 @@ export class SlackService {
     }
   }
 
-  async handleReminderDispatch({ stakeholdersId, reminderType, messageTimestamp }) {
+  async handleReminderDispatch({ stakeholdersId, reminderType, metaData }) {
     const notification = {
       text: '',
       block: '',
@@ -515,9 +528,15 @@ export class SlackService {
         break;
     }
 
+    // Tag a user to follow up on the PR
+    if (reminderType !== ReminderDispatchTypes.MERGER && metaData.reminderCount >= this.REMINDER_COUNT_LIMIT) {
+      notification.text = `${notification.text} cc: <@${this.SCRUM_MASTER_ID}>`;
+      notification.block = `${notification.block}\n\n cc: <@${this.SCRUM_MASTER_ID}>`;
+    }
+
     await this.boltApp.client.chat.postMessage({
       channel: this.CHANNEL_ID,
-      thread_ts: messageTimestamp,
+      thread_ts: metaData.messageTimestamp,
       text: notification.text,
       blocks: StatusUpdateNotificationBlock(notification.block),
     });
