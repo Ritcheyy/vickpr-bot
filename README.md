@@ -68,7 +68,7 @@ $ npm run test:cov
 - [x] Implement Slack slash commands for PR submission.
 - [x] Set up automated reminders for reviewers.
 - [x] Enhance Slack interaction with interactive messages for PR details submission.
-- [ ] Add Edit PR submission feature
+- [x] Add Edit PR submission feature
 - [ ] Add support for Nudging the reviewers of a pending PR
 - [ ] Add support for customizing reminder intervals.
 - [ ] Introduce advanced analytics and reporting features for PR performance tracking.
