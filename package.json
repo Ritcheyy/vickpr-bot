@@ -19,6 +19,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@gitbeaker/rest": "^40.2.2",
     "@nestjs/common": "^10.3.2",
     "@nestjs/config": "^3.2.2",
     "@nestjs/core": "^10.3.2",
