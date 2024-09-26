@@ -49,3 +49,17 @@ export enum FancyPrType {
   ci = 'CI  :construction_worker:',
   revert = 'Revert  :rewind:',
 }
+
+export enum GitlabEvents {
+  NOTE = 'note',
+  MERGE_REQUEST = 'merge_request',
+}
+
+export enum GitlabEventActions {
+  OPEN = 'open',
+  CLOSE = 'close',
+  UPDATE = 'update',
+  APPROVED = 'approved',
+  UNAPPROVED = 'unapproved',
+  MERGED = 'merged',
+}

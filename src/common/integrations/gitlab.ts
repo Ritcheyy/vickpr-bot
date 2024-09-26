@@ -1,3 +1,6 @@
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+require('dotenv').config();
+
 import { Gitlab } from '@gitbeaker/rest';
 
 if (!process.env.GITLAB_TOKEN) {
