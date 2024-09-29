@@ -369,7 +369,7 @@ export const NewSubmissionBlock = (pullRequest: PullRequest, isUpdate: boolean =
             },
             {
               type: 'mrkdwn',
-              text: `*Type:* ${FancyPrType[pullRequest.type]}`,
+              text: `*Type:* ${FancyPrType[pullRequest.type] || pullRequest.type}`,
             },
             {
               type: 'mrkdwn',

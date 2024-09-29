@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Gitlab } from '@gitbeaker/core';
 import { GitlabEventActions, GitlabEvents } from '@/common/constants';
+import { extractValuesFromTemplate } from '@/common/helpers';
+import { PrDescriptionValues } from '@/common/types';
 import GitlabClient from '../../common/integrations/gitlab';
 
 @Injectable()
@@ -34,13 +36,21 @@ export class GitlabService {
           // console.log(newPullRequest);
           // create a new pull request
         } else {
+          // console.log(object_attributes);
           // Update existing one
           const existingPullRequest = await this.fetchPR(project.id, object_attributes.iid);
+          const { title, description, web_url } = existingPullRequest;
+          const { ticket, priority, type }: PrDescriptionValues = extractValuesFromTemplate(description, web_url);
+
           const pullRequest = {
-            title: existingPullRequest.title,
-            link: existingPullRequest.web_url,
+            link: web_url,
+            title,
+            ticket,
+            type,
+            priority,
           };
           console.log(pullRequest);
+          // console.log(existingPullRequest);
         }
       }
       // Check action type

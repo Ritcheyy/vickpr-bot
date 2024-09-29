@@ -10,7 +10,7 @@
 
 - Outline the steps the reviewer would take in testing the PR
 
-### Functionality Reviewer
+### Reviewers
 
 - Tag the reviewers of this PR (this will be used to link their Slack profiles)
 

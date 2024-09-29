@@ -62,3 +62,7 @@ export type ReviewerType = {
   user: User;
   status: string;
 };
+
+export type PrDescriptionValues = Pick<SubmitPullRequestType, 'type' | 'ticket' | 'priority'> & {
+  reviewers: string;
+};

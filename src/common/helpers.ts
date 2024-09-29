@@ -1,6 +1,6 @@
 import { ValidationError } from 'class-validator';
 import { PullRequestStatus } from '@/common/constants';
-import { ReviewerType } from './types';
+import { PrDescriptionValues, ReviewerType } from './types';
 import { mapEmojiToStatus } from './utils';
 
 export const _extractBlockFormValues = (submittedValues: any) => {
@@ -30,6 +30,39 @@ export const _extractBlockFormValues = (submittedValues: any) => {
     structuredValues,
     blockIdMapping,
   };
+};
+
+/*
+ * Extract values from the submitted pull request description template
+ * @return PrDescriptionValues
+ */
+export const extractValuesFromTemplate = (template: string, prLink: string) => {
+  const values = {} as PrDescriptionValues;
+  const content = template.split('###');
+
+  if (content.length) {
+    content.forEach((item) => {
+      if (item) {
+        const [_key, _value] = JSON.parse(JSON.stringify(item.trim())).split('\n\n');
+        if (_key && _value) {
+          switch (_key.trim()) {
+            case 'Pull Request Type':
+              if (_value.toLowerCase().includes('type of pull request')) values['type'] = 'bugfix';
+              else values['type'] = _value.replace('-', '').trim();
+              break;
+            case 'Jira Link':
+              if (_value.toLowerCase().includes('link to jira task')) values['ticket'] = prLink;
+              else values['ticket'] = _value.replace('-', '').trim();
+              break;
+            default:
+              values[_key.trim().toLowerCase()] = _value.replace('-', '').trim();
+              break;
+          }
+        }
+      }
+    });
+  }
+  return values;
 };
 
 /*
