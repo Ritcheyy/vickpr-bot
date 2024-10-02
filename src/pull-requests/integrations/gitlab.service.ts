@@ -38,6 +38,7 @@ export class GitlabService {
         } else {
           // console.log(object_attributes);
           // Update existing one
+          // Todo: Move to PR Open event
           const existingPullRequest = await this.fetchPR(project.id, object_attributes.iid);
           const { title, description, web_url } = existingPullRequest;
           const { ticket, priority, type }: PrDescriptionValues = extractValuesFromTemplate(description, web_url);
@@ -48,7 +49,11 @@ export class GitlabService {
             ticket,
             type,
             priority,
+            project: project.name, // format project name properly
+            status: 'pending',
           };
+
+          // Todo: Sort author and reviewers
           console.log(pullRequest);
           // console.log(existingPullRequest);
         }
