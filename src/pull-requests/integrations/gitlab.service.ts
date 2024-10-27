@@ -22,6 +22,9 @@ export class GitlabService {
   }
 
   async handlePullRequestEvent(payload: Record<any, any>) {
+    // const users = await this.apiClient.Users.all();
+    // console.log(users);
+    // return;
     const { project, object_kind, object_attributes } = payload;
 
     try {
