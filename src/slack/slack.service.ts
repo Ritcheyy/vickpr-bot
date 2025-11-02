@@ -17,7 +17,21 @@ import {
   ReminderDispatchTypes,
   ReviewStatusResponse,
 } from '@/common/constants';
-import { _extractBlockFormValues, getUserInfo, handleSubmissionError } from '@/common/helpers';
+import {
+  _capitalizeString,
+  _capitalizeWords,
+  _extractBlockFormValues,
+  getUserInfo,
+  handleSubmissionError,
+} from '@/common/helpers';
+import {
+  getConfiguredProjects,
+  getWeeklyReportGroupOrder,
+  getWeeklyReportProjectGroupMap,
+  isWeeklyReportEnabled,
+  resolveWeeklyReportGroupLabel,
+} from '@/common/config';
+import { PullRequest } from '@/pull-requests/schemas/pull-request.schema';
 import { ChannelTypes, EventTypes, SubmitPullRequestType } from '@/common/types';
 import { PullRequestsService } from '@/pull-requests/pull-requests.service';
 
@@ -522,6 +536,153 @@ export class SlackService {
       blocks: StatusUpdateNotificationBlock(notification.block),
     });
     return;
+  }
+
+  /**
+   * Generates the weekly summary, grouped project updates, and dispatches them to the configured Slack channel.
+   * The report is windowed to the last seven days so it can be triggered on the Thursday 3PM cron.
+   */
+  async triggerWeeklyReport() {
+    if (!isWeeklyReportEnabled()) {
+      return;
+    }
+
+    if (!this.CHANNEL_ID) {
+      console.warn('Weekly report skipped: AUTHORIZED_CHANNEL_ID is not configured.');
+      return;
+    }
+
+    try {
+      const reportEnd = moment();
+      const reportStart = moment(reportEnd).subtract(7, 'days');
+
+      // read client-specific configuration for mapping projects to report groups
+      const projectGroupMap = getWeeklyReportProjectGroupMap();
+      const configuredProjects = getConfiguredProjects();
+
+      const rawPullRequests = await this.pullRequestsService.findCreatedBetween(
+        reportStart.toDate(),
+        reportEnd.toDate(),
+        configuredProjects,
+      );
+
+      const baseGroupOrder = getWeeklyReportGroupOrder();
+      const groupedPullRequests: Record<string, PullRequest[]> = {};
+      const additionalGroupOrder: string[] = [];
+      const includedPullRequests: PullRequest[] = [];
+
+      rawPullRequests.forEach((pullRequest) => {
+        const projectKey = (pullRequest.project || '').trim().toLowerCase();
+        const groupKey = projectGroupMap[projectKey];
+
+        if (!groupKey) {
+          // skip PRs when no mapping exists; we log the aggregate below for visibility
+          return;
+        }
+
+        if (!groupedPullRequests[groupKey]) {
+          groupedPullRequests[groupKey] = [];
+
+          if (!baseGroupOrder.includes(groupKey)) {
+            additionalGroupOrder.push(groupKey);
+          }
+        }
+
+        groupedPullRequests[groupKey].push(pullRequest);
+        includedPullRequests.push(pullRequest);
+      });
+
+      baseGroupOrder.forEach((groupKey) => {
+        groupedPullRequests[groupKey] = groupedPullRequests[groupKey] || [];
+      });
+
+      const orderedGroups = [...baseGroupOrder, ...additionalGroupOrder];
+
+      const pendingStatuses = new Set<string>([
+        PullRequestStatus.PENDING,
+        PullRequestStatus.REVIEWING,
+        PullRequestStatus.COMMENTED,
+        PullRequestStatus.APPROVED,
+      ]);
+
+      const totalCount = includedPullRequests.length;
+      // pending count is intentionally broad so teams can triage both open and review-in-progress work
+      const pendingCount = includedPullRequests.filter((pullRequest) => pendingStatuses.has(pullRequest.status)).length;
+      const mergedCount = includedPullRequests.filter((pullRequest) => pullRequest.status === PullRequestStatus.MERGED).length;
+
+      const reportWindowText = `${reportStart.format('MMM Do')} → ${reportEnd.format('MMM Do')}`;
+
+      const summaryBlocks = [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `*Weekly Pull Requests Report*  :bookmark_tabs:\n${reportWindowText}\n\n:hourglass_flowing_sand:  Pending: *${pendingCount}*\n\n:rocket:  Merged: *${mergedCount}*\n\n:1234:  Total: *${totalCount}*`,
+          },
+        },
+      ];
+
+      const summaryMessage = await this.boltApp.client.chat.postMessage({
+        channel: this.CHANNEL_ID,
+        text: 'Weekly Pull Requests Report',
+        blocks: summaryBlocks,
+      });
+
+      const threadTimestamp = summaryMessage.ts;
+
+      for (const groupKey of orderedGroups) {
+        const groupLabel = resolveWeeklyReportGroupLabel(groupKey);
+        const groupBlocks = this.buildWeeklyReportGroupBlocks(groupLabel, groupedPullRequests[groupKey]);
+
+        await this.boltApp.client.chat.postMessage({
+          channel: this.CHANNEL_ID,
+          thread_ts: threadTimestamp,
+          text: `${groupLabel} Weekly Report`,
+          blocks: groupBlocks,
+        });
+      }
+
+      const ignoredCount = rawPullRequests.length - includedPullRequests.length;
+
+      if (ignoredCount > 0) {
+        console.warn(`Weekly report ignored ${ignoredCount} pull request(s) due to missing project group mapping.`);
+      }
+
+      console.log(`\n\nTriggered: Weekly Report - ${reportEnd.format()}\n\n`);
+    } catch (error) {
+      console.error('Failed to dispatch weekly report', error);
+    }
+  }
+
+  /**
+   * Formats a group's pull requests into a Slack message section so each department update can be threaded.
+   * @param groupLabel Human-friendly label (e.g. "Frontend") that will headline the section.
+   * @param pullRequests The pull requests assigned to the group for the reporting window.
+   */
+  private buildWeeklyReportGroupBlocks(groupLabel: string, pullRequests: PullRequest[]) {
+    const header = `*${groupLabel} Team*`;
+
+    const body =
+      pullRequests.length > 0
+        ? pullRequests
+            .map((pullRequest) => {
+              const statusLabel = _capitalizeWords(pullRequest.status);
+              const title = pullRequest.title || 'Untitled PR';
+
+              return `• ${title} → _${statusLabel}_`;
+            })
+            .join('\n')
+        : '_No updates for this period._ :zzz:';
+
+    return [
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `${header}\n\n${body}\n\n\u200B`, // \u200B is a zero-width space
+        },
+      },
+    ];
   }
 
   async testAction({ ack }) {

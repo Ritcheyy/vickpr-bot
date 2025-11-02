@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { SlackService } from './slack.service';
 
@@ -6,6 +6,8 @@ import { SlackService } from './slack.service';
 const MONDAY_TO_FRIDAY_AT_09_30AM = CronExpression.MONDAY_TO_FRIDAY_AT_09_30AM;
 const MONDAY_TO_FRIDAY_AT_1PM = CronExpression.MONDAY_TO_FRIDAY_AT_1PM;
 const MONDAY_TO_FRIDAY_AT_4PM = CronExpression.MONDAY_TO_FRIDAY_AT_4PM;
+// const THURSDAY_AT_3PM = '0 15 * * 4';
+const THURSDAY_AT_3PM = CronExpression.EVERY_30_SECONDS;
 
 @Controller('slack')
 export class SlackController {
@@ -24,6 +26,12 @@ export class SlackController {
   @Cron(MONDAY_TO_FRIDAY_AT_4PM)
   handleEveningReminderCron() {
     return this.slackService.triggerReviewReminders();
+  }
+
+  // @Cron(THURSDAY_AT_3PM)
+  @Get('test')
+  handleWeeklyReportCron() {
+    return this.slackService.triggerWeeklyReport();
   }
 
   // For verifying the Request URL

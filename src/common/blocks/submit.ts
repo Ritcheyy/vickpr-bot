@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { PullRequest } from '@/pull-requests/schemas/pull-request.schema';
 import { FancyPrType, PullRequestStatus } from '../constants';
+import { getConfiguredProjects } from '@/common/config';
 import {
   _capitalizeString,
   _capitalizeWords,
@@ -11,15 +12,15 @@ import {
 } from '../helpers';
 
 export const SubmitPullRequestModalBlock = (userId: string = '') => {
-  const projects = getProjects();
+  const projects = getConfiguredProjects();
   const projectOptions =
     projects.map((project) => {
       return {
         text: {
           type: 'plain_text',
-          text: project.trim(),
+          text: project,
         },
-        value: project.trim(),
+        value: project,
       };
     }) || [];
 
@@ -424,7 +425,7 @@ export const SubmissionRequestBlock = () => {
 };
 
 export const EditPullRequestBlock = (pullRequest: PullRequest & { _id: Types.ObjectId }) => {
-  const projects = getProjects();
+  const projects = getConfiguredProjects();
   const projectOptions =
     projects.map((project) => {
       return {
@@ -657,9 +658,6 @@ export const EditPullRequestBlock = (pullRequest: PullRequest & { _id: Types.Obj
   };
 };
 
-const getProjects = () => {
-  return process.env.APP_PROJECTS?.split(',') || [];
-};
 
 const pullRequestTypes = [
   {
