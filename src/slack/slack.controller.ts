@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { SlackService } from './slack.service';
 import { isWeeklyReportEnabled } from '@/common/config';
