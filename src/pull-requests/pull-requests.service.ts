@@ -1,5 +1,5 @@
 import * as moment from 'moment';
-import { isValidObjectId, Model } from 'mongoose';
+import { FilterQuery, isValidObjectId, Model } from 'mongoose';
 import { plainToInstance } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import { InjectModel } from '@nestjs/mongoose';
@@ -166,6 +166,25 @@ export class PullRequestsService {
     return this.pullRequestModel
       .find({ status: { $nin: prClosedStatuses }, createdAt: { $gte: formattedDateLimit } })
       .sort({ createdAt: -1 });
+  }
+
+  /**
+   * Returns pull requests whose creation timestamp falls within the supplied window.
+   * Optionally restricts the results to a defined list of project identifiers.
+   */
+  async findCreatedBetween(startDate: Date, endDate: Date, projectFilter: string[] = []) {
+    const query: FilterQuery<PullRequest> = {
+      createdAt: {
+        $gte: startDate,
+        $lt: endDate,
+      },
+    };
+
+    if (projectFilter.length > 0) {
+      query.project = { $in: projectFilter };
+    }
+
+    return this.pullRequestModel.find(query).sort({ createdAt: 1 }).lean();
   }
 
   getNotificationDispatchType(status: string, hasTotalApprovals: boolean = false) {

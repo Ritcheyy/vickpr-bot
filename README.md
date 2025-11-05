@@ -63,12 +63,18 @@ $ npm run test:cov
 
 3. **Usage**: Use Slack slash commands to submit PR details and schedule reminders.
 
+### Weekly Report Configuration
+
+- Set `ENABLE_WEEKLY_REPORT=1` to activate the automated Thursday 3:00 PM report. Omit or set to `0` to disable.
+- Define `WEEKLY_REPORT_PROJECT_GROUPS` to map projects to the report groups. Example: `frontend:User Web App|Landing page;mobile:Mobile App;backend:API Repo`.
+- The bot posts a parent message with weekly totals followed by threaded updates for Frontend, Mobile, and Backend projects, or as configured.
+
 ### Roadmap
 
 - [x] Implement Slack slash commands for PR submission.
 - [x] Set up automated reminders for reviewers.
 - [x] Enhance Slack interaction with interactive messages for PR details submission.
-- [ ] Add Edit PR submission feature
+- [x] Add Edit PR submission feature
 - [ ] Add support for Nudging the reviewers of a pending PR
 - [ ] Add support for customizing reminder intervals.
 - [ ] Introduce advanced analytics and reporting features for PR performance tracking.
