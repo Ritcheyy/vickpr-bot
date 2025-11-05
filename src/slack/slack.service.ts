@@ -603,6 +603,7 @@ export class SlackService {
         PullRequestStatus.REVIEWING,
         PullRequestStatus.COMMENTED,
         PullRequestStatus.APPROVED,
+        PullRequestStatus.ON_HOLD,
       ]);
 
       const totalCount = includedPullRequests.length;
@@ -666,8 +667,9 @@ export class SlackService {
       pullRequests.length > 0
         ? pullRequests
             .map((pullRequest) => {
-              const statusLabel = _capitalizeWords(pullRequest.status);
-              const title = pullRequest.title || 'Untitled PR';
+              const statusLabel =
+                pullRequest.status === PullRequestStatus.MERGED ? 'Done' : 'In Progress';
+              const title = _capitalizeString(pullRequest.title) || 'Untitled PR';
 
               return `• ${title} → _${statusLabel}_`;
             })
