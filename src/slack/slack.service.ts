@@ -40,6 +40,7 @@ export class SlackService {
   private boltApp: App;
   private readonly receiver: ExpressReceiver;
   private readonly CHANNEL_ID = process.env.AUTHORIZED_CHANNEL_ID;
+  private readonly WEEKLY_REPORT_CHANNEL_ID = process.env.WEEKLY_REPORT_CHANNEL_ID ?? process.env.AUTHORIZED_CHANNEL_ID;
   private readonly SCRUM_MASTER_ID = process.env.SCRUM_MASTER_USER_ID;
   private readonly REMINDER_COUNT_LIMIT = 4;
 
@@ -566,8 +567,8 @@ export class SlackService {
       return;
     }
 
-    if (!this.CHANNEL_ID) {
-      console.warn('Weekly report skipped: AUTHORIZED_CHANNEL_ID is not configured.');
+    if (!this.WEEKLY_REPORT_CHANNEL_ID) {
+      console.warn('Weekly report skipped: WEEKLY_REPORT_CHANNEL_ID is not configured.');
       return;
     }
 
@@ -643,7 +644,7 @@ export class SlackService {
       ];
 
       const summaryMessage = await this.boltApp.client.chat.postMessage({
-        channel: this.CHANNEL_ID,
+        channel: this.WEEKLY_REPORT_CHANNEL_ID,
         text: 'Weekly Pull Requests Report',
         blocks: summaryBlocks,
       });
@@ -655,7 +656,7 @@ export class SlackService {
         const groupBlocks = this.buildWeeklyReportGroupBlocks(groupLabel, groupedPullRequests[groupKey]);
 
         await this.boltApp.client.chat.postMessage({
-          channel: this.CHANNEL_ID,
+          channel: this.WEEKLY_REPORT_CHANNEL_ID,
           thread_ts: threadTimestamp,
           text: `${groupLabel} Weekly Report`,
           blocks: groupBlocks,
