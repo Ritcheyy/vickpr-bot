@@ -29,19 +29,6 @@ export class PullRequestsService {
     }
   }
 
-  async create(pullRequestBody: CreatePullRequestDto) {
-    const newPullRequest = plainToInstance(CreatePullRequestDto, pullRequestBody);
-
-    try {
-      await validateOrReject(newPullRequest);
-
-      const createdPullRequest = new this.pullRequestModel(pullRequestBody);
-      return await createdPullRequest.save();
-    } catch (errors) {
-      throw errors;
-    }
-  }
-
   async findAll() {
     return this.pullRequestModel.find().sort({ createdAt: -1 }).limit(20);
   }
@@ -52,20 +39,6 @@ export class PullRequestsService {
 
   async findByMessageTimestamp(messageTimestamp: string) {
     return this.pullRequestModel.findOne({ 'message.timestamp': messageTimestamp });
-  }
-
-  async update(id: string, body: UpdatePullRequestDto) {
-    if (!isValidObjectId(id)) {
-      throw new UnprocessableEntityException('Invalid ID');
-    }
-
-    const pullRequest = await this.pullRequestModel.findByIdAndUpdate(id, { $set: body }, { new: true });
-
-    if (!pullRequest) {
-      throw new UnprocessableEntityException('Pull Request not found');
-    }
-
-    return pullRequest;
   }
 
   async updateReviewStatus(pullRequest: PullRequestDocument, userId: string, status: string) {
