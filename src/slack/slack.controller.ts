@@ -22,21 +22,4 @@ export class SlackController {
   handleAfternoonReminderCron() {
     return this.slackService.triggerReviewReminders();
   }
-
-  @Cron(MONDAY_TO_FRIDAY_AT_4PM)
-  handleEveningReminderCron() {
-    return this.slackService.triggerReviewReminders();
-  }
-
-  @Cron(THURSDAY_AT_3PM, { disabled: !isWeeklyReportEnabled() })
-  handleWeeklyReportCron() {
-    return this.slackService.triggerWeeklyReport();
-  }
-
-  // For verifying the Request URL
-  /*  @Post('events')
-  handleUrlVerification(@Body() req: VerificationDto) {
-    console.log(req);
-    return req.challenge;
-  }*/
 }
