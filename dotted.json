@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "resources": {
+    "documents": [
+      {
+        "id": "doc-src-pull-requests-pull-requests-controller-ts",
+        "mode": "backing_file",
+        "name": "pull-requests.controller.ts",
+        "path": "src/pull-requests/pull-requests.controller.ts",
+        "materialize": true,
+        "mime_type": "text/typescript"
+      },
+      {
+        "id": "doc-src-slack-slack-controller-ts",
+        "mode": "backing_file",
+        "name": "slack.controller.ts",
+        "path": "src/slack/slack.controller.ts",
+        "materialize": true,
+        "mime_type": "text/typescript"
+      },
+      {
+        "id": "doc-package-json",
+        "mode": "backing_file",
+        "name": "package.json",
+        "path": "package.json",
+        "materialize": true,
+        "mime_type": "application/json"
+      }
+    ]
+  },
+  "published_at": "2026-04-24T13:31:13.155Z",
+  "published_by": "user:3"
+}
