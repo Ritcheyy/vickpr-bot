@@ -1,1 +1,103 @@
-<h2>VickPR Bot</h2><p>VickPR Bot is a Semi-Automated Slack app designed to streamline pull request management within our development team.</p><h3>Tools/Technologies</h3><p>VickPR Bot is built using the following tools and technologies:</p><ul><li><p>NodeJS and NestJS</p></li><li><p>MongoDB</p></li><li><p>Slack API</p></li><li><p>Slack Block kit</p></li></ul><h3>Getting started</h3><pre><code>$ git clone [repo-link] vickpr-bot</code></pre><pre><code># copy config file$ cp .env.example .env</code></pre><h3>Installation</h3><pre><code>$ npm install</code></pre><h3>Running the app</h3><pre><code># development$ npm run start# watch mode$ npm run start:dev# production mode$ npm run start:prod</code></pre><h3>Test</h3><pre><code># unit tests$ npm run test# e2e tests$ npm run test:e2e# test coverage$ npm run test:cov</code></pre><h3>Slack Installation</h3><ol type="1"><li><p><strong>Installation</strong>: Install the VickPR Bot Slack app from the Slack App Directory.</p></li><li><p><strong>Configuration</strong>: Configure the app settings, including Slack OAuth tokens.</p></li><li><p><strong>Usage</strong>: Use Slack slash commands to submit PR details and schedule reminders.</p></li></ol><h3>Weekly Report Configuration</h3><ul><li><p>Set <code>ENABLE_WEEKLY_REPORT=1</code> to activate the automated Thursday 3:00 PM report. Omit or set to <code>0</code> to disable.</p></li><li><p>Define <code>WEEKLY_REPORT_PROJECT_GROUPS</code> to map projects to the report groups. Example: <code>frontend:User Web App|Landing page;mobile:Mobile App;backend:API Repo</code>.</p></li><li><p>The bot posts a parent message with weekly totals followed by threaded updates for Frontend, Mobile, and Backend projects, or as configured.</p></li></ul><h3>Roadmap</h3><ul><li><p>Implement Slack slash commands for PR submission.</p></li><li><p>Set up automated reminders for reviewers.</p></li><li><p>Enhance Slack interaction with interactive messages for PR details submission.</p></li><li><p>Add Edit PR submission feature</p></li><li><p>Add support for Nudging the reviewers of a pending PR</p></li><li><p>Add support for customizing reminder intervals.</p></li><li><p>Introduce advanced analytics and reporting features for PR performance tracking.</p></li></ul><h3>Contribution Guidelines</h3><p>VickPR Bot welcomes contributions from the community. Here’s how you can contribute:</p><ol type="1"><li><p><strong>Fork the Repository</strong>: Fork the VickPR Bot repository on GitHub.</p></li><li><p><strong>Implement Features or Fixes</strong>: Work on new features or bug fixes in your fork.</p></li><li><p><strong>Submit Pull Requests</strong>: Submit pull requests from your fork to the main repository for review.</p></li><li><p><strong>Follow Coding Standards</strong>: Adhere to coding standards and guidelines used in the project.</p></li><li><p><strong>Testing</strong>: Ensure your changes are properly tested and include relevant documentation updates.</p></li></ol><h3>Authors</h3><ul><li><p><a target="_blank" rel="noopener noreferrer nofollow" href="https://github.com/ritcheyy">Ritcheyy</a></p></li></ul><p></p>
+## VickPR Bot
+
+VickPR Bot is a Semi-Automated Slack app designed to streamline pull request management within our development team.
+
+### Tools/Technologies
+
+VickPR Bot is built using the following tools and technologies:
+
+- NodeJS and NestJS
+- MongoDB
+- Slack API
+- Slack Block kit
+
+
+### Getting started
+
+```bash
+$ git clone [repo-link] vickpr-bot
+```
+
+```bash
+# copy config file
+$ cp .env.example .env
+```
+
+### Installation
+
+```bash
+$ npm install
+```
+
+### Running the app
+
+```bash
+# development
+$ npm run start
+
+# watch mode
+$ npm run start:dev
+
+# production mode
+$ npm run start:prod
+```
+
+### Test
+
+```bash
+# unit tests
+$ npm run test
+
+# e2e tests
+$ npm run test:e2e
+
+# test coverage
+$ npm run test:cov
+```
+
+### Slack Installation
+
+1. **Installation**: Install the VickPR Bot Slack app from the Slack App Directory.
+
+2. **Configuration**: Configure the app settings, including Slack OAuth tokens.
+
+3. **Usage**: Use Slack slash commands to submit PR details and schedule reminders.
+
+### Weekly Report Configuration
+
+- Set `ENABLE_WEEKLY_REPORT=1` to activate the automated Thursday 3:00 PM report. Omit or set to `0` to disable.
+- Define `WEEKLY_REPORT_PROJECT_GROUPS` to map projects to the report groups. Example: `frontend:User Web App|Landing page;mobile:Mobile App;backend:API Repo`.
+- The bot posts a parent message with weekly totals followed by threaded updates for Frontend, Mobile, and Backend projects, or as configured.
+
+### Roadmap
+
+- [x] Implement Slack slash commands for PR submission.
+- [x] Set up automated reminders for reviewers.
+- [x] Enhance Slack interaction with interactive messages for PR details submission.
+- [x] Add Edit PR submission feature
+- [ ] Add support for Nudging the reviewers of a pending PR
+- [ ] Add support for customizing reminder intervals.
+- [ ] Introduce advanced analytics and reporting features for PR performance tracking.
+
+### Contribution Guidelines
+
+VickPR Bot welcomes contributions from the community. Here's how you can contribute:
+
+1. **Fork the Repository**: Fork the VickPR Bot repository on GitHub.
+
+2. **Implement Features or Fixes**: Work on new features or bug fixes in your fork.
+
+3. **Submit Pull Requests**: Submit pull requests from your fork to the main repository for review.
+
+4. **Follow Coding Standards**: Adhere to coding standards and guidelines used in the project.
+
+5. **Testing**: Ensure your changes are properly tested and include relevant documentation updates.
+
+### Support and Feedback
+
+For support or feedback, reach out to the project maintainers or open an issue on GitHub.
+
+
+### Authors
+
+- [Ritcheyy](https://github.com/ritcheyy)
