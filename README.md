@@ -79,6 +79,15 @@ $ npm run test:cov
 - [ ] Add support for customizing reminder intervals.
 - [ ] Introduce advanced analytics and reporting features for PR performance tracking.
 
+### Product Principles
+
+VickPR Bot is designed around a few simple product principles:
+
+- **Reduce review friction**: Make it easy for authors to request reviews and for reviewers to understand what needs attention.
+- **Keep teams informed**: Use Slack-native reminders and reports so PR status is visible where teams already collaborate.
+- **Automate the repetitive work**: Let the bot handle nudges, reminders, and weekly summaries so engineers can focus on shipping quality code.
+- **Improve continuously**: Use feedback and reporting data to identify bottlenecks in the pull request process.
+
 ### Contribution Guidelines
 
 VickPR Bot welcomes contributions from the community. Here's how you can contribute:
